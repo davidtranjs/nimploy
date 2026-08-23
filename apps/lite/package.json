@@ -1,0 +1,51 @@
+{
+  "name": "@nimploy/lite",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:server": "tsx watch server/src/index.ts",
+    "dev:client": "vite client",
+    "build:server": "tsc -p server/tsconfig.json",
+    "build:client": "vite build client",
+    "build": "pnpm build:client && pnpm build:server",
+    "test": "vitest run --dir server/__test__",
+    "db:generate": "drizzle-kit generate --config server/src/db/drizzle.config.ts",
+    "db:migrate": "tsx server/src/db/migrate.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.3",
+    "@hono/zod-validator": "^0.7.6",
+    "@tanstack/react-query": "^5.90.21",
+    "better-sqlite3": "^11.8.1",
+    "clsx": "^2.1.1",
+    "dockerode": "^4.0.2",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.11.7",
+    "lucide-react": "^0.469.0",
+    "nanoid": "^5.0.9",
+    "p-queue": "^8.0.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "tailwind-merge": "^2.6.1",
+    "ws": "^8.18.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/dockerode": "^3.3.34",
+    "@types/node": "^24.4.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@types/ws": "^8.5.14",
+    "@vitejs/plugin-react": "^4.3.4",
+    "drizzle-kit": "^0.31.4",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.22.4",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0",
+    "vitest": "^3.0.7"
+  }
+}

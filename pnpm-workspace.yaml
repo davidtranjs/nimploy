@@ -1,6 +1,7 @@
 packages:
   - "apps/api"
   - "apps/dokploy"
+  - "apps/lite"
   - "apps/schedules"
   - "packages/server"
 

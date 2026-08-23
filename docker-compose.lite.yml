@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  nimploy-lite:
+    build:
+      context: .
+      dockerfile: Dockerfile.lite
+    container_name: nimploy-lite
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "3000:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/nimploy:/etc/nimploy
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/etc/nimploy
+      - PORT=3000
+    deploy:
+      resources:
+        limits:
+          memory: 150M
