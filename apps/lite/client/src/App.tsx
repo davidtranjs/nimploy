@@ -52,7 +52,7 @@ function DashboardRoot() {
             <Server className="w-4 h-4" />
           </div>
           <div>
-            <h1 className="text-base font-bold tracking-tight text-slate-900">Nimploy Lite</h1>
+            <h1 className="text-base font-bold tracking-tight text-slate-900">Nimploy</h1>
           </div>
         </div>
 
