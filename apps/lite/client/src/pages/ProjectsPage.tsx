@@ -6,7 +6,6 @@ import {
   Layers,
   Search,
   Trash2,
-  ArrowRight,
   Loader2,
   XCircle,
   Box,
@@ -225,9 +224,6 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
 
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                       <span>ID: {app.id}</span>
-                      <span className="flex items-center gap-1 text-slate-600 group-hover:text-emerald-600 transition font-medium">
-                        View Details <ArrowRight className="w-3 h-3" />
-                      </span>
                     </div>
                   </div>
                 ))}
@@ -242,9 +238,6 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-slate-900 tracking-tight">Projects</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Group and manage your microservices, APIs, and background workers.
-              </p>
             </div>
 
             <button
@@ -315,9 +308,6 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
 
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                     <span>Created {new Date(proj.createdAt).toLocaleDateString()}</span>
-                    <span className="flex items-center gap-1 text-slate-600 group-hover:text-emerald-600 transition font-medium">
-                      Open Project <ArrowRight className="w-3 h-3" />
-                    </span>
                   </div>
                 </div>
               ))}

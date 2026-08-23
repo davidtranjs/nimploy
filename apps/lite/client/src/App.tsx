@@ -59,13 +59,7 @@ function DashboardRoot() {
             <Server className="w-4 h-4" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold tracking-tight text-slate-900">Nimploy Lite</h1>
-              <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-medium tracking-wide">
-                Ultra-Low Footprint Mode
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 font-medium">Autonomous Micro-PaaS Engine</p>
+            <h1 className="text-base font-bold tracking-tight text-slate-900">Nimploy Lite</h1>
           </div>
         </div>
 
