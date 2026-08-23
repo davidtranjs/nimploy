@@ -9,9 +9,9 @@ import {
   Box,
   FileCode,
   FolderOpen,
-  ArrowLeft,
 } from "lucide-react";
 import { navigateTo } from "../router";
+import { Breadcrumb } from "../components/Breadcrumb";
 
 interface ProjectDetailsPageProps {
   projectId: string;
@@ -90,9 +90,8 @@ export function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
         <button
           type="button"
           onClick={() => navigateTo({ type: "projects" })}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4" />
           <span>Back to Projects</span>
         </button>
       </div>
@@ -102,24 +101,21 @@ export function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigateTo({ type: "projects" })}
-            className="p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition shadow-2xs"
-            title="Back to all projects"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <FolderOpen className="w-5 h-5 text-emerald-600" />
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">{project.name}</h2>
-            </div>
-            {project.description && (
-              <p className="text-xs text-slate-500 mt-0.5">{project.description}</p>
-            )}
+        <div>
+          <Breadcrumb
+            items={[
+              { label: "Projects", onClick: () => navigateTo({ type: "projects" }) },
+              { label: project.name },
+            ]}
+            className="mb-1.5"
+          />
+          <div className="flex items-center gap-2">
+            <FolderOpen className="w-5 h-5 text-emerald-600" />
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">{project.name}</h2>
           </div>
+          {project.description && (
+            <p className="text-xs text-slate-500 mt-0.5">{project.description}</p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">

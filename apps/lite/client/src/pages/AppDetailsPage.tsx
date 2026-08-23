@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   Play,
   Terminal,
   Globe,
@@ -17,6 +16,7 @@ import {
   Save,
 } from "lucide-react";
 import { LogViewer } from "../components/LogViewer";
+import { Breadcrumb } from "../components/Breadcrumb";
 import { navigateTo, replaceTo } from "../router";
 
 interface AppDetailsPageProps {
@@ -106,14 +106,27 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
     },
   });
 
+  const targetProjectId = projectId || app?.projectId;
+
+  const { data: project } = useQuery({
+    queryKey: ["project", targetProjectId],
+    queryFn: async () => {
+      if (!targetProjectId) return null;
+      const res = await fetch(`/api/projects/${encodeURIComponent(targetProjectId)}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!targetProjectId,
+  });
+
   const handleBack = () => {
     if (onBack) {
       onBack();
       return;
     }
-    const targetProjectId = projectId || app?.projectId;
-    if (targetProjectId) {
-      navigateTo({ type: "project", projectId: targetProjectId });
+    const targetProj = project?.slug || targetProjectId;
+    if (targetProj) {
+      navigateTo({ type: "project", projectId: targetProj });
     } else {
       navigateTo({ type: "projects" });
     }
@@ -209,25 +222,23 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
     <div className="space-y-6">
       {/* Top Navigation Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition shadow-2xs"
-            title="Back"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">{app.name}</h2>
-              <span className="px-2 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                {app.appType}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              <span className="font-mono text-slate-600">/{app.slug || app.id}</span> • Created {new Date(app.createdAt).toLocaleDateString()}
-            </p>
+        <div>
+          <Breadcrumb
+            items={[
+              { label: "Projects", onClick: () => navigateTo({ type: "projects" }) },
+              {
+                label: project?.name || targetProjectId || "Project",
+                onClick: handleBack,
+              },
+              { label: app.name },
+            ]}
+            className="mb-1.5"
+          />
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">{app.name}</h2>
+            <span className="px-2 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+              {app.appType}
+            </span>
           </div>
         </div>
 
