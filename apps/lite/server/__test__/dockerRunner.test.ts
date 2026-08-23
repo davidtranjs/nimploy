@@ -122,17 +122,17 @@ describe("Docker Runner & Log Streaming", () => {
     const scriptPath = path.join(tmpDir, "docker");
     // Mock binary that echoes its arguments
     fs.writeFileSync(scriptPath, "#!/bin/sh\necho \"$@\"\nexit 0\n", { mode: 0o755 });
+    fs.chmodSync(scriptPath, 0o755);
 
-    // Temporarily point PATH or execute directly via spy / custom script
     const chunks: string[] = [];
-    const result = await runDockerBuild("myapp:latest", "Dockerfile.custom", {
+    const result = await executeCommandWithLogs(scriptPath, ["build", "-t", "myapp:latest", "-f", "Dockerfile", "."], {
       workingDir: tmpDir,
       logPath: logFile,
       onLog: (chunk) => chunks.push(chunk),
-      env: { PATH: `${tmpDir}:${process.env.PATH}` },
-    }).catch(() => null);
+    });
 
-    // If docker binary exists on system or fails, we can verify helper signature
+    expect(result.exitCode).toBe(0);
+    expect(chunks.join("")).toContain("build -t myapp:latest -f Dockerfile .");
     expect(typeof runDockerBuild).toBe("function");
     expect(typeof runComposeUp).toBe("function");
     expect(typeof runComposeDown).toBe("function");

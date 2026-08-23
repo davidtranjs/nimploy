@@ -3,14 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FolderGit2,
   Plus,
-  Server,
   Layers,
   Search,
   Trash2,
   ArrowRight,
   Loader2,
   XCircle,
-  GitBranch,
   Box,
   FileCode,
   FolderOpen,
@@ -100,19 +98,6 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
     },
   });
 
-  const deleteAppMutation = useMutation({
-    mutationFn: async (appId: string) => {
-      const res = await fetch(`/api/applications/${appId}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete application");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applications", selectedProjectId] });
-    },
-  });
-
   const selectedProject = projects?.find((p: any) => p.id === selectedProjectId);
 
   const filteredProjects = projects?.filter((p: any) => {
@@ -127,22 +112,22 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
       {selectedProjectId && selectedProject ? (
         <div className="space-y-6">
           {/* Back & Project Title */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => setSelectedProjectId(null)}
-                className="p-2 rounded-lg bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white transition"
+                className="p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition shadow-2xs"
                 title="Back to all projects"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div>
                 <div className="flex items-center gap-2">
-                  <FolderOpen className="w-5 h-5 text-emerald-400" />
-                  <h2 className="text-xl font-bold text-white tracking-tight">{selectedProject.name}</h2>
+                  <FolderOpen className="w-5 h-5 text-emerald-600" />
+                  <h2 className="text-xl font-bold text-slate-900 tracking-tight">{selectedProject.name}</h2>
                 </div>
-                <p className="text-xs text-neutral-400 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   {selectedProject.description || "No description provided"}
                 </p>
               </div>
@@ -157,7 +142,7 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
                   }
                 }}
                 disabled={deleteProjectMutation.isPending}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-neutral-800 hover:border-rose-900 hover:bg-rose-950/40 text-neutral-400 hover:text-rose-400 text-xs font-medium transition"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 hover:border-rose-300 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-medium transition bg-white shadow-2xs"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Delete Project</span>
@@ -166,7 +151,7 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
               <button
                 type="button"
                 onClick={() => setShowCreateAppModal(true)}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium text-sm transition"
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition shadow-xs"
               >
                 <Plus className="w-4 h-4" />
                 <span>New Application</span>
@@ -177,26 +162,26 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
           {/* Applications Grid */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-white">Applications</h3>
-              <span className="text-xs text-neutral-500">{applications?.length || 0} total</span>
+              <h3 className="text-base font-semibold text-slate-900">Applications</h3>
+              <span className="text-xs text-slate-500 font-medium">{applications?.length || 0} total</span>
             </div>
 
             {appsLoading ? (
-              <div className="flex items-center justify-center py-16 text-neutral-500 gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
+              <div className="flex items-center justify-center py-16 text-slate-500 gap-2">
+                <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
                 <span>Loading applications...</span>
               </div>
             ) : applications?.length === 0 ? (
-              <div className="border border-dashed border-neutral-800 rounded-xl p-12 text-center text-neutral-500">
-                <Layers className="w-10 h-10 mx-auto mb-3 opacity-40 text-neutral-400" />
-                <p className="text-base font-medium text-neutral-300">No applications in this project yet</p>
-                <p className="text-xs text-neutral-500 mt-1 mb-4">
+              <div className="border border-dashed border-slate-300 bg-white/60 rounded-xl p-12 text-center text-slate-500">
+                <Layers className="w-10 h-10 mx-auto mb-3 opacity-40 text-slate-400" />
+                <p className="text-base font-semibold text-slate-800">No applications in this project yet</p>
+                <p className="text-xs text-slate-500 mt-1 mb-4">
                   Deploy a Dockerfile, Docker Compose stack, or pre-built Docker image.
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowCreateAppModal(true)}
-                  className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium text-xs transition"
+                  className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium text-xs transition shadow-xs"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Create Application</span>
@@ -208,28 +193,28 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
                   <div
                     key={app.id}
                     onClick={() => onSelectApp(app.id)}
-                    className="border border-neutral-800 hover:border-neutral-700 bg-neutral-900/40 hover:bg-neutral-900/80 rounded-xl p-5 transition cursor-pointer flex flex-col justify-between group"
+                    className="border border-slate-200/80 hover:border-slate-300 bg-white hover:bg-slate-50/70 rounded-xl p-5 transition cursor-pointer flex flex-col justify-between group shadow-xs hover:shadow-sm"
                   >
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2">
                           {app.appType === "image" ? (
-                            <Box className="w-4 h-4 text-cyan-400" />
+                            <Box className="w-4 h-4 text-cyan-600" />
                           ) : app.appType === "compose" ? (
-                            <Layers className="w-4 h-4 text-purple-400" />
+                            <Layers className="w-4 h-4 text-purple-600" />
                           ) : (
-                            <FileCode className="w-4 h-4 text-emerald-400" />
+                            <FileCode className="w-4 h-4 text-emerald-600" />
                           )}
-                          <h4 className="font-semibold text-white group-hover:text-emerald-400 transition">
+                          <h4 className="font-semibold text-slate-900 group-hover:text-emerald-600 transition">
                             {app.name}
                           </h4>
                         </div>
-                        <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 border border-neutral-700">
+                        <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
                           {app.appType}
                         </span>
                       </div>
 
-                      <p className="text-xs text-neutral-400 line-clamp-2 mb-4 font-mono">
+                      <p className="text-xs text-slate-500 line-clamp-2 mb-4 font-mono">
                         {app.appType === "image"
                           ? app.dockerImage || "No image specified"
                           : app.repositoryUrl
@@ -238,9 +223,9 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
                       </p>
                     </div>
 
-                    <div className="pt-3 border-t border-neutral-800/80 flex items-center justify-between text-xs text-neutral-500">
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                       <span>ID: {app.id}</span>
-                      <span className="flex items-center gap-1 text-neutral-400 group-hover:text-emerald-400 transition">
+                      <span className="flex items-center gap-1 text-slate-600 group-hover:text-emerald-600 transition font-medium">
                         View Details <ArrowRight className="w-3 h-3" />
                       </span>
                     </div>
@@ -256,8 +241,8 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
           {/* Header Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">Projects</h2>
-              <p className="text-xs text-neutral-400 mt-0.5">
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">Projects</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
                 Group and manage your microservices, APIs, and background workers.
               </p>
             </div>
@@ -265,7 +250,7 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
             <button
               type="button"
               onClick={() => setShowCreateProjectModal(true)}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium text-sm transition self-start sm:self-auto"
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition self-start sm:self-auto shadow-xs"
             >
               <Plus className="w-4 h-4" />
               <span>New Project</span>
@@ -274,34 +259,34 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
 
           {/* Search bar */}
           <div className="relative max-w-md">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               placeholder="Search projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-9 pr-3 py-2 text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-white border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 shadow-2xs"
             />
           </div>
 
           {/* Projects Grid */}
           {projectsLoading ? (
-            <div className="flex items-center justify-center py-20 text-neutral-500 gap-2">
-              <Loader2 className="w-5 h-5 animate-spin" />
+            <div className="flex items-center justify-center py-20 text-slate-500 gap-2">
+              <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
               <span>Loading projects...</span>
             </div>
           ) : filteredProjects?.length === 0 ? (
-            <div className="border border-dashed border-neutral-800 rounded-xl p-14 text-center text-neutral-500">
-              <FolderGit2 className="w-10 h-10 mx-auto mb-3 opacity-40 text-neutral-400" />
-              <p className="text-base font-medium text-neutral-300">No projects found</p>
-              <p className="text-xs text-neutral-500 mt-1 mb-4">
+            <div className="border border-dashed border-slate-300 bg-white/60 rounded-xl p-14 text-center text-slate-500">
+              <FolderGit2 className="w-10 h-10 mx-auto mb-3 opacity-40 text-slate-400" />
+              <p className="text-base font-semibold text-slate-800">No projects found</p>
+              <p className="text-xs text-slate-500 mt-1 mb-4">
                 {searchQuery ? "No projects match your search query." : "Create your first project to begin deploying."}
               </p>
               {!searchQuery && (
                 <button
                   type="button"
                   onClick={() => setShowCreateProjectModal(true)}
-                  className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium text-xs transition"
+                  className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium text-xs transition shadow-xs"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Create Project</span>
@@ -314,23 +299,23 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
                 <div
                   key={proj.id}
                   onClick={() => setSelectedProjectId(proj.id)}
-                  className="border border-neutral-800 hover:border-neutral-700 bg-neutral-900/40 hover:bg-neutral-900/80 rounded-xl p-5 transition cursor-pointer flex flex-col justify-between group"
+                  className="border border-slate-200/80 hover:border-slate-300 bg-white hover:bg-slate-50/70 rounded-xl p-5 transition cursor-pointer flex flex-col justify-between group shadow-xs hover:shadow-sm"
                 >
                   <div>
                     <div className="flex items-center gap-2.5 mb-2">
-                      <FolderGit2 className="w-5 h-5 text-emerald-400" />
-                      <h3 className="font-semibold text-white text-base group-hover:text-emerald-400 transition">
+                      <FolderGit2 className="w-5 h-5 text-emerald-600" />
+                      <h3 className="font-semibold text-slate-900 text-base group-hover:text-emerald-600 transition">
                         {proj.name}
                       </h3>
                     </div>
-                    <p className="text-sm text-neutral-400 line-clamp-2 mb-4">
+                    <p className="text-sm text-slate-500 line-clamp-2 mb-4">
                       {proj.description || "No description provided."}
                     </p>
                   </div>
 
-                  <div className="pt-3 border-t border-neutral-800/80 flex items-center justify-between text-xs text-neutral-500">
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                     <span>Created {new Date(proj.createdAt).toLocaleDateString()}</span>
-                    <span className="flex items-center gap-1 text-neutral-400 group-hover:text-emerald-400 transition font-medium">
+                    <span className="flex items-center gap-1 text-slate-600 group-hover:text-emerald-600 transition font-medium">
                       Open Project <ArrowRight className="w-3 h-3" />
                     </span>
                   </div>
@@ -364,7 +349,7 @@ export function ProjectsPage({ onSelectApp }: ProjectsPageProps) {
 }
 
 // -------------------------------------------------------------
-// Modals
+// Modals (Light Theme)
 // -------------------------------------------------------------
 
 function CreateProjectModal({
@@ -386,51 +371,51 @@ function CreateProjectModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-          <h3 className="text-base font-semibold text-white">Create New Project</h3>
-          <button type="button" onClick={onClose} className="text-neutral-500 hover:text-neutral-300">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 className="text-base font-bold text-slate-900">Create New Project</h3>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <XCircle className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1">Project Name</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Project Name</label>
             <input
               type="text"
               required
               placeholder="e.g. My Next.js SaaS"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1">Description (Optional)</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Description (Optional)</label>
             <textarea
               rows={3}
               placeholder="Brief description of this project..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-neutral-800">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-xs font-medium transition text-neutral-300"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium transition text-slate-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-xs font-medium transition"
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-xs font-semibold transition shadow-xs"
             >
               {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>Create Project</span>
@@ -479,41 +464,41 @@ function CreateApplicationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-          <h3 className="text-base font-semibold text-white">Create New Application</h3>
-          <button type="button" onClick={onClose} className="text-neutral-500 hover:text-neutral-300">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white border border-slate-200 rounded-xl max-w-lg w-full p-6 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 className="text-base font-bold text-slate-900">Create New Application</h3>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <XCircle className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1">Application Name</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Application Name</label>
             <input
               type="text"
               required
               placeholder="e.g. web-frontend"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1">Application Type</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Application Type</label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setAppType("dockerfile")}
                 className={`py-2 px-3 rounded-lg border text-xs font-medium transition flex flex-col items-center gap-1 ${
                   appType === "dockerfile"
-                    ? "bg-emerald-950/60 border-emerald-500 text-emerald-300"
-                    : "bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                    ? "bg-emerald-50 border-emerald-500 text-emerald-700 font-semibold"
+                    : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
                 }`}
               >
-                <FileCode className="w-4 h-4" />
+                <FileCode className="w-4 h-4 text-emerald-600" />
                 <span>Dockerfile</span>
               </button>
 
@@ -522,11 +507,11 @@ function CreateApplicationModal({
                 onClick={() => setAppType("compose")}
                 className={`py-2 px-3 rounded-lg border text-xs font-medium transition flex flex-col items-center gap-1 ${
                   appType === "compose"
-                    ? "bg-emerald-950/60 border-emerald-500 text-emerald-300"
-                    : "bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                    ? "bg-emerald-50 border-emerald-500 text-emerald-700 font-semibold"
+                    : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
                 }`}
               >
-                <Layers className="w-4 h-4" />
+                <Layers className="w-4 h-4 text-purple-600" />
                 <span>Compose</span>
               </button>
 
@@ -535,11 +520,11 @@ function CreateApplicationModal({
                 onClick={() => setAppType("image")}
                 className={`py-2 px-3 rounded-lg border text-xs font-medium transition flex flex-col items-center gap-1 ${
                   appType === "image"
-                    ? "bg-emerald-950/60 border-emerald-500 text-emerald-300"
-                    : "bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                    ? "bg-emerald-50 border-emerald-500 text-emerald-700 font-semibold"
+                    : "bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300"
                 }`}
               >
-                <Box className="w-4 h-4" />
+                <Box className="w-4 h-4 text-cyan-600" />
                 <span>Docker Image</span>
               </button>
             </div>
@@ -547,80 +532,80 @@ function CreateApplicationModal({
 
           {appType === "image" ? (
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1">Docker Image</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Docker Image</label>
               <input
                 type="text"
                 required
                 placeholder="e.g. redis:alpine, postgres:16"
                 value={dockerImage}
                 onChange={(e) => setDockerImage(e.target.value)}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500 font-mono"
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono"
               />
             </div>
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-medium text-neutral-400 mb-1">Git Repository URL</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Git Repository URL</label>
                   <input
                     type="text"
                     placeholder="https://github.com/org/repo"
                     value={repositoryUrl}
                     onChange={(e) => setRepositoryUrl(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500 font-mono text-xs"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono text-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1">Branch</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Branch</label>
                   <input
                     type="text"
                     placeholder="main"
                     value={branch}
                     onChange={(e) => setBranch(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500 font-mono text-xs"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono text-xs"
                   />
                 </div>
               </div>
 
               {appType === "dockerfile" ? (
                 <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1">Dockerfile Path</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Dockerfile Path</label>
                   <input
                     type="text"
                     placeholder="Dockerfile"
                     value={dockerfilePath}
                     onChange={(e) => setDockerfilePath(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500 font-mono text-xs"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono text-xs"
                   />
                 </div>
               ) : (
                 <div>
-                  <label className="block text-xs font-medium text-neutral-400 mb-1">Docker Compose File</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Docker Compose File</label>
                   <input
                     type="text"
                     placeholder="docker-compose.yml"
                     value={composePath}
                     onChange={(e) => setComposePath(e.target.value)}
-                    className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500 font-mono text-xs"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono text-xs"
                   />
                 </div>
               )}
             </>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-neutral-800">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-xs font-medium transition text-neutral-300"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium transition text-slate-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-xs font-medium transition"
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-xs font-semibold transition shadow-xs"
             >
               {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>Create Application</span>

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { db, schema } from "../db/index.js";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { syncCaddyConfig } from "../services/deploymentService.js";
 
 export const domainRouter = new Hono()
   .get("/", async (c) => {
@@ -48,10 +49,12 @@ export const domainRouter = new Hono()
     };
 
     await db.insert(schema.domains).values(newDomain);
+    await syncCaddyConfig(db).catch(() => {});
     return c.json(newDomain, 201);
   })
   .delete("/:id", async (c) => {
     const id = c.req.param("id");
     await db.delete(schema.domains).where(eq(schema.domains.id, id));
+    await syncCaddyConfig(db).catch(() => {});
     return c.json({ success: true });
   });

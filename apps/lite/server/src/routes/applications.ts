@@ -2,6 +2,9 @@ import { Hono } from "hono";
 import { db, schema } from "../db/index.js";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { jobQueue } from "../queue/jobQueue.js";
+import path from "node:path";
+import fs from "node:fs";
 
 export const applicationRouter = new Hono()
   .get("/", async (c) => {
@@ -61,6 +64,38 @@ export const applicationRouter = new Hono()
     };
 
     await db.insert(schema.applications).values(newApp);
+
+    if (body.autoDeploy !== false && (newApp.dockerImage || newApp.repositoryUrl)) {
+      const depId = nanoid(10);
+      const logDir = process.env.LOGS_DIR || path.join(process.env.DATA_DIR || "/tmp/nimploy", "logs");
+      if (!fs.existsSync(logDir)) {
+        try {
+          fs.mkdirSync(logDir, { recursive: true });
+        } catch {}
+      }
+      const logPath = path.join(logDir, `${depId}.log`);
+      const initialDeployment = {
+        id: depId,
+        applicationId: id,
+        status: "PENDING",
+        commitHash: null,
+        logPath,
+        startedAt: Date.now(),
+        finishedAt: null,
+      };
+      await db.insert(schema.deployments).values(initialDeployment);
+      await jobQueue.addJob({
+        id: `job-${depId}`,
+        applicationId: id,
+        jobType: "deploy",
+        payload: {
+          deploymentId: depId,
+          applicationId: id,
+          logPath,
+        },
+      });
+    }
+
     return c.json(newApp, 201);
   })
   .patch("/:id", async (c) => {

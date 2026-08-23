@@ -22,7 +22,6 @@ export default function App() {
 }
 
 function DashboardRoot() {
-  // Simple client-side hash / state navigation
   const [selectedAppId, setSelectedAppId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("appId");
@@ -49,24 +48,24 @@ function DashboardRoot() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
       {/* Top Header */}
-      <header className="border-b border-neutral-800/80 bg-neutral-950/80 backdrop-blur-md sticky top-0 z-40 px-6 py-3.5 flex items-center justify-between">
+      <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-40 px-6 py-3.5 flex items-center justify-between shadow-xs">
         <div
           className="flex items-center gap-3 cursor-pointer select-none"
           onClick={() => handleSelectApp(null)}
         >
-          <div className="w-8 h-8 rounded-lg bg-emerald-950 border border-emerald-800/80 flex items-center justify-center text-emerald-400">
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-xs">
             <Server className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold tracking-tight text-white">Nimploy Lite</h1>
-              <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded-full font-medium tracking-wide">
+              <h1 className="text-base font-bold tracking-tight text-slate-900">Nimploy Lite</h1>
+              <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-medium tracking-wide">
                 Ultra-Low Footprint Mode
               </span>
             </div>
-            <p className="text-[11px] text-neutral-500">Autonomous Micro-PaaS Engine</p>
+            <p className="text-[11px] text-slate-500 font-medium">Autonomous Micro-PaaS Engine</p>
           </div>
         </div>
 
@@ -83,9 +82,9 @@ function DashboardRoot() {
       </main>
 
       {/* Lightweight Footer */}
-      <footer className="border-t border-neutral-900 px-6 py-4 text-center text-xs text-neutral-600 flex items-center justify-between max-w-6xl w-full mx-auto">
+      <footer className="border-t border-slate-200 bg-white/50 px-6 py-4 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between max-w-6xl w-full mx-auto gap-2">
         <span>Nimploy Lite • SQLite & Caddy Native Architecture</span>
-        <span>Target Idle RAM: &lt; 70MB</span>
+        <span className="font-medium text-slate-600">Target Idle RAM: &lt; 70MB</span>
       </footer>
     </div>
   );
@@ -109,20 +108,20 @@ function ServerStatsHeader() {
   const rssMb = health?.memoryUsage?.rss ? Math.round(health.memoryUsage.rss / 1024 / 1024) : null;
 
   return (
-    <div className="flex items-center gap-3 text-xs">
+    <div className="flex items-center gap-2.5 text-xs">
       {rssMb !== null && (
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400">
-          <Cpu className="w-3.5 h-3.5 text-neutral-500" />
+        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100/90 border border-slate-200 text-slate-600 shadow-2xs">
+          <Cpu className="w-3.5 h-3.5 text-slate-500" />
           <span>Server RSS:</span>
-          <span className={`font-mono font-medium ${rssMb < 70 ? "text-emerald-400" : "text-amber-400"}`}>
+          <span className={`font-mono font-semibold ${rssMb < 70 ? "text-emerald-600" : "text-amber-600"}`}>
             {rssMb} MB
           </span>
         </div>
       )}
 
-      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400">
-        <Activity className="w-3.5 h-3.5 text-emerald-400" />
-        <span className="text-emerald-400 font-medium hidden sm:inline">Operational</span>
+      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-medium shadow-2xs">
+        <Activity className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+        <span className="hidden sm:inline">Operational</span>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { db, schema } from "../db/index.js";
 import { eq, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { jobQueue } from "../queue/jobQueue.js";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -80,5 +81,18 @@ export const deploymentRouter = new Hono()
     };
 
     await db.insert(schema.deployments).values(newDeployment);
+
+    await jobQueue.addJob({
+      id: `job-${id}`,
+      applicationId: String(body.applicationId),
+      jobType: "deploy",
+      payload: {
+        deploymentId: id,
+        applicationId: String(body.applicationId),
+        logPath,
+        commitHash: newDeployment.commitHash,
+      },
+    });
+
     return c.json(newDeployment, 201);
   });

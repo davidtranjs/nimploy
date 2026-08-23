@@ -12,11 +12,8 @@ import {
   Plus,
   CheckCircle,
   XCircle,
-  Clock,
   Loader2,
   RefreshCw,
-  Server,
-  Layers,
   Save,
 } from "lucide-react";
 import { LogViewer } from "../components/LogViewer";
@@ -50,7 +47,7 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
       if (!res.ok) throw new Error("Failed to fetch deployments");
       return res.json();
     },
-    refetchInterval: 3000, // Poll every 3 seconds for active deployment updates
+    refetchInterval: 3000,
   });
 
   const { data: domains, isLoading: domainsLoading } = useQuery({
@@ -147,8 +144,8 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
 
   if (appLoading) {
     return (
-      <div className="flex items-center justify-center py-24 text-neutral-500 gap-2">
-        <Loader2 className="w-5 h-5 animate-spin" />
+      <div className="flex items-center justify-center py-24 text-slate-500 gap-2">
+        <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
         <span>Loading application details...</span>
       </div>
     );
@@ -157,11 +154,11 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
   if (appError || !app) {
     return (
       <div className="py-12 text-center">
-        <p className="text-rose-400 mb-4">Application not found or failed to load.</p>
+        <p className="text-rose-600 font-medium mb-4">Application not found or failed to load.</p>
         <button
           type="button"
           onClick={onBack}
-          className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded text-sm"
+          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition"
         >
           Back to Applications
         </button>
@@ -169,29 +166,27 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
     );
   }
 
-  const latestDeployment = deployments?.[0];
-
   return (
     <div className="space-y-6">
       {/* Top Navigation Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="p-2 rounded-lg bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white transition"
+            className="p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition shadow-2xs"
             title="Back"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-xl font-bold text-white tracking-tight">{app.name}</h2>
-              <span className="px-2 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold bg-neutral-800 text-neutral-300 border border-neutral-700">
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">{app.name}</h2>
+              <span className="px-2 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                 {app.appType}
               </span>
             </div>
-            <p className="text-xs text-neutral-500 mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5 font-mono">
               ID: {app.id} • Created: {new Date(app.createdAt).toLocaleDateString()}
             </p>
           </div>
@@ -203,7 +198,7 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
             type="button"
             onClick={() => deployMutation.mutate()}
             disabled={deployMutation.isPending}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium text-sm transition shadow-lg shadow-emerald-950/40"
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-semibold text-sm transition shadow-xs"
           >
             {deployMutation.isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -216,14 +211,14 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-neutral-800 text-sm gap-6">
+      <div className="flex border-b border-slate-200 text-sm gap-6">
         <button
           type="button"
           onClick={() => setActiveTab("overview")}
           className={`pb-3 font-medium transition flex items-center gap-2 border-b-2 ${
             activeTab === "overview"
-              ? "border-emerald-500 text-white"
-              : "border-transparent text-neutral-400 hover:text-neutral-200"
+              ? "border-emerald-600 text-emerald-700 font-semibold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
           <Settings className="w-4 h-4" />
@@ -235,14 +230,14 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
           onClick={() => setActiveTab("deployments")}
           className={`pb-3 font-medium transition flex items-center gap-2 border-b-2 ${
             activeTab === "deployments"
-              ? "border-emerald-500 text-white"
-              : "border-transparent text-neutral-400 hover:text-neutral-200"
+              ? "border-emerald-600 text-emerald-700 font-semibold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
           <History className="w-4 h-4" />
           <span>Deployments</span>
           {deployments && deployments.length > 0 && (
-            <span className="text-xs bg-neutral-800 text-neutral-400 px-1.5 py-0.2 rounded-full">
+            <span className="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded-full border border-slate-200">
               {deployments.length}
             </span>
           )}
@@ -253,8 +248,8 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
           onClick={() => setActiveTab("logs")}
           className={`pb-3 font-medium transition flex items-center gap-2 border-b-2 ${
             activeTab === "logs"
-              ? "border-emerald-500 text-white"
-              : "border-transparent text-neutral-400 hover:text-neutral-200"
+              ? "border-emerald-600 text-emerald-700 font-semibold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
           <Terminal className="w-4 h-4" />
@@ -266,14 +261,14 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
           onClick={() => setActiveTab("domains")}
           className={`pb-3 font-medium transition flex items-center gap-2 border-b-2 ${
             activeTab === "domains"
-              ? "border-emerald-500 text-white"
-              : "border-transparent text-neutral-400 hover:text-neutral-200"
+              ? "border-emerald-600 text-emerald-700 font-semibold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
           <Globe className="w-4 h-4" />
           <span>Domains</span>
           {domains && domains.length > 0 && (
-            <span className="text-xs bg-neutral-800 text-neutral-400 px-1.5 py-0.2 rounded-full">
+            <span className="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded-full border border-slate-200">
               {domains.length}
             </span>
           )}
@@ -310,7 +305,7 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
       {activeTab === "logs" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-neutral-400">
+            <span className="text-xs font-medium text-slate-500">
               {selectedDeploymentId
                 ? `Showing logs for deployment ${selectedDeploymentId}`
                 : "Streaming live logs for this application"}
@@ -319,7 +314,7 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
               <button
                 type="button"
                 onClick={() => setSelectedDeploymentId(undefined)}
-                className="text-xs text-emerald-400 hover:underline"
+                className="text-xs font-semibold text-emerald-600 hover:underline"
               >
                 Switch to live stream
               </button>
@@ -355,7 +350,7 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
 }
 
 // -------------------------------------------------------------
-// Sub-components
+// Sub-components (Light Theme)
 // -------------------------------------------------------------
 
 function OverviewConfigTab({
@@ -405,96 +400,96 @@ function OverviewConfigTab({
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
       {successMessage && (
-        <div className="p-3 bg-emerald-950/50 border border-emerald-800 text-emerald-300 rounded-lg text-sm flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-emerald-400" />
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-medium flex items-center gap-2 shadow-xs">
+          <CheckCircle className="w-4 h-4 text-emerald-600" />
           <span>{successMessage}</span>
         </div>
       )}
 
       {/* General Settings */}
-      <div className="border border-neutral-800 rounded-lg p-5 bg-neutral-900/40 space-y-4">
-        <h3 className="text-base font-semibold text-white">General Configuration</h3>
+      <div className="border border-slate-200 rounded-xl p-5 bg-white space-y-4 shadow-xs">
+        <h3 className="text-base font-bold text-slate-900">General Configuration</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1">Application Name</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Application Name</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1">Application Type</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Application Type</label>
             <input
               type="text"
               disabled
               value={app.appType}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-400 uppercase cursor-not-allowed"
+              className="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-500 uppercase cursor-not-allowed font-medium"
             />
           </div>
         </div>
 
         {app.appType === "image" ? (
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1">Docker Image</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Docker Image</label>
             <input
               type="text"
               placeholder="e.g. nginx:alpine or redis:latest"
               value={dockerImage}
               onChange={(e) => setDockerImage(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500 font-mono"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono"
             />
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-neutral-400 mb-1">Git Repository URL</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Git Repository URL</label>
                 <input
                   type="text"
                   placeholder="https://github.com/org/repo.git"
                   value={repositoryUrl}
                   onChange={(e) => setRepositoryUrl(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-neutral-400 mb-1">Git Branch</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Git Branch</label>
                 <input
                   type="text"
                   placeholder="main"
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono text-xs"
                 />
               </div>
             </div>
 
             {app.appType === "dockerfile" ? (
               <div>
-                <label className="block text-xs font-medium text-neutral-400 mb-1">Dockerfile Path</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Dockerfile Path</label>
                 <input
                   type="text"
                   placeholder="Dockerfile"
                   value={dockerfilePath}
                   onChange={(e) => setDockerfilePath(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500 font-mono"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono text-xs"
                 />
               </div>
             ) : (
               <div>
-                <label className="block text-xs font-medium text-neutral-400 mb-1">Docker Compose File</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Docker Compose File</label>
                 <input
                   type="text"
                   placeholder="docker-compose.yml"
                   value={composePath}
                   onChange={(e) => setComposePath(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500 font-mono"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono text-xs"
                 />
               </div>
             )}
@@ -503,11 +498,11 @@ function OverviewConfigTab({
       </div>
 
       {/* Environment Variables */}
-      <div className="border border-neutral-800 rounded-lg p-5 bg-neutral-900/40 space-y-3">
+      <div className="border border-slate-200 rounded-xl p-5 bg-white space-y-3 shadow-xs">
         <div>
-          <h3 className="text-base font-semibold text-white">Environment Variables</h3>
-          <p className="text-xs text-neutral-400 mt-0.5">
-            Key-value pairs as valid JSON (e.g. {"{\"PORT\": \"8080\", \"NODE_ENV\": \"production\"}"})
+          <h3 className="text-base font-bold text-slate-900">Environment Variables</h3>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Key-value pairs as valid JSON (e.g. {`{"PORT": "8080", "NODE_ENV": "production"}`})
           </p>
         </div>
 
@@ -515,7 +510,7 @@ function OverviewConfigTab({
           rows={6}
           value={envVars}
           onChange={(e) => setEnvVars(e.target.value)}
-          className="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-sm font-mono text-neutral-200 focus:outline-none focus:border-emerald-500"
+          className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm font-mono text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500"
           placeholder='{"KEY": "VALUE"}'
         />
       </div>
@@ -525,7 +520,7 @@ function OverviewConfigTab({
         <button
           type="submit"
           disabled={isUpdating}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
+          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-xs"
         >
           {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           <span>Save Changes</span>
@@ -535,7 +530,7 @@ function OverviewConfigTab({
           type="button"
           onClick={onDelete}
           disabled={isDeleting}
-          className="flex items-center gap-2 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 border border-transparent hover:border-rose-900 px-4 py-2.5 rounded-lg text-sm font-medium transition"
+          className="flex items-center gap-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 px-4 py-2.5 rounded-lg text-sm font-medium transition"
         >
           {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
           <span>Delete Application</span>
@@ -556,8 +551,8 @@ function DeploymentsTab({
 }) {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16 text-neutral-500 gap-2">
-        <Loader2 className="w-5 h-5 animate-spin" />
+      <div className="flex items-center justify-center py-16 text-slate-500 gap-2">
+        <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
         <span>Loading deployments history...</span>
       </div>
     );
@@ -565,18 +560,18 @@ function DeploymentsTab({
 
   if (deployments.length === 0) {
     return (
-      <div className="border border-dashed border-neutral-800 rounded-lg p-12 text-center text-neutral-500">
-        <History className="w-8 h-8 mx-auto mb-2 opacity-40" />
-        <p>No deployments recorded yet.</p>
-        <span className="text-xs text-neutral-600">Click &quot;Deploy Now&quot; above to trigger your first build.</span>
+      <div className="border border-dashed border-slate-300 bg-white/60 rounded-xl p-12 text-center text-slate-500">
+        <History className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
+        <p className="font-semibold text-slate-700">No deployments recorded yet</p>
+        <span className="text-xs text-slate-500">Click &quot;Deploy Now&quot; above to trigger your first build.</span>
       </div>
     );
   }
 
   return (
-    <div className="border border-neutral-800 rounded-lg overflow-hidden bg-neutral-900/30">
+    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
       <table className="w-full text-left text-sm">
-        <thead className="bg-neutral-900 border-b border-neutral-800 text-xs font-semibold text-neutral-400">
+        <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600">
           <tr>
             <th className="py-3 px-4">Status</th>
             <th className="py-3 px-4">Deployment ID</th>
@@ -585,40 +580,40 @@ function DeploymentsTab({
             <th className="py-3 px-4 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-neutral-800/60">
+        <tbody className="divide-y divide-slate-100">
           {deployments.map((dep) => {
             const isCompleted = dep.status === "COMPLETED";
             const isFailed = dep.status === "FAILED" || dep.status === "INTERRUPTED";
             const isRunning = dep.status === "RUNNING";
 
             return (
-              <tr key={dep.id} className="hover:bg-neutral-900/50 transition">
+              <tr key={dep.id} className="hover:bg-slate-50/70 transition">
                 <td className="py-3 px-4">
                   <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                       isCompleted
-                        ? "bg-emerald-950 text-emerald-400 border border-emerald-800/80"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                         : isFailed
-                        ? "bg-rose-950 text-rose-400 border border-rose-800/80"
+                        ? "bg-rose-50 text-rose-700 border border-rose-200"
                         : isRunning
-                        ? "bg-blue-950 text-blue-400 border border-blue-800/80 animate-pulse"
-                        : "bg-neutral-800 text-neutral-400 border border-neutral-700"
+                        ? "bg-blue-50 text-blue-700 border border-blue-200 animate-pulse"
+                        : "bg-slate-100 text-slate-600 border border-slate-200"
                     }`}
                   >
-                    {isCompleted && <CheckCircle className="w-3 h-3" />}
-                    {isFailed && <XCircle className="w-3 h-3" />}
-                    {isRunning && <RefreshCw className="w-3 h-3 animate-spin" />}
+                    {isCompleted && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
+                    {isFailed && <XCircle className="w-3.5 h-3.5 text-rose-600" />}
+                    {isRunning && <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />}
                     <span>{dep.status}</span>
                   </span>
                 </td>
 
-                <td className="py-3 px-4 font-mono text-xs text-neutral-300">{dep.id}</td>
+                <td className="py-3 px-4 font-mono text-xs text-slate-700">{dep.id}</td>
 
-                <td className="py-3 px-4 font-mono text-xs text-neutral-400">
+                <td className="py-3 px-4 font-mono text-xs text-slate-500">
                   {dep.commitHash ? dep.commitHash.slice(0, 7) : "—"}
                 </td>
 
-                <td className="py-3 px-4 text-xs text-neutral-400">
+                <td className="py-3 px-4 text-xs text-slate-500">
                   {dep.startedAt ? new Date(dep.startedAt).toLocaleString() : "—"}
                 </td>
 
@@ -626,7 +621,7 @@ function DeploymentsTab({
                   <button
                     type="button"
                     onClick={() => onViewLogs(dep.id)}
-                    className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/50 border border-emerald-900/60 px-2.5 py-1 rounded transition"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg transition"
                   >
                     <Terminal className="w-3.5 h-3.5" />
                     <span>View Logs</span>
@@ -656,13 +651,13 @@ function DomainsTab({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-semibold text-white">Configured Domains</h3>
-          <p className="text-xs text-neutral-400">Caddy reverse proxies incoming traffic on these domains to your container.</p>
+          <h3 className="text-base font-bold text-slate-900">Configured Domains</h3>
+          <p className="text-xs text-slate-500">Caddy reverse proxies incoming traffic on these domains to your container.</p>
         </div>
         <button
           type="button"
           onClick={onOpenAdd}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition"
+          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow-xs"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Add Domain</span>
@@ -670,20 +665,20 @@ function DomainsTab({
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12 text-neutral-500 gap-2">
-          <Loader2 className="w-5 h-5 animate-spin" />
+        <div className="flex items-center justify-center py-12 text-slate-500 gap-2">
+          <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
           <span>Loading domains...</span>
         </div>
       ) : domains.length === 0 ? (
-        <div className="border border-dashed border-neutral-800 rounded-lg p-10 text-center text-neutral-500">
-          <Globe className="w-8 h-8 mx-auto mb-2 opacity-40" />
-          <p>No domains mapped yet.</p>
-          <span className="text-xs text-neutral-600">Add a custom domain or localhost subdomain to route web traffic.</span>
+        <div className="border border-dashed border-slate-300 bg-white/60 rounded-xl p-10 text-center text-slate-500">
+          <Globe className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
+          <p className="font-semibold text-slate-700">No domains mapped yet</p>
+          <span className="text-xs text-slate-500">Add a custom domain or localhost subdomain to route web traffic.</span>
         </div>
       ) : (
-        <div className="border border-neutral-800 rounded-lg overflow-hidden bg-neutral-900/30">
+        <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
           <table className="w-full text-left text-sm">
-            <thead className="bg-neutral-900 border-b border-neutral-800 text-xs font-semibold text-neutral-400">
+            <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600">
               <tr>
                 <th className="py-3 px-4">Domain Host</th>
                 <th className="py-3 px-4">Container Port</th>
@@ -691,33 +686,35 @@ function DomainsTab({
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-800/60">
+            <tbody className="divide-y divide-slate-100">
               {domains.map((dom) => (
-                <tr key={dom.id} className="hover:bg-neutral-900/50 transition">
-                  <td className="py-3 px-4 font-mono text-sm text-neutral-200">
+                <tr key={dom.id} className="hover:bg-slate-50/70 transition">
+                  <td className="py-3 px-4 font-mono text-sm">
                     <a
                       href={`http${dom.httpsEnabled ? "s" : ""}://${dom.host}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 text-emerald-400 hover:underline"
+                      className="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 font-medium hover:underline"
                     >
                       {dom.host}
                       <ExternalLink className="w-3.5 h-3.5 opacity-70" />
                     </a>
                   </td>
-                  <td className="py-3 px-4 font-mono text-xs text-neutral-400">{dom.containerPort}</td>
+                  <td className="py-3 px-4 font-mono text-xs text-slate-600">{dom.containerPort}</td>
                   <td className="py-3 px-4 text-xs">
                     {dom.httpsEnabled ? (
-                      <span className="text-emerald-400 font-medium">Automatic (Let&apos;s Encrypt)</span>
+                      <span className="text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full text-[11px]">
+                        Auto TLS (Let&apos;s Encrypt)
+                      </span>
                     ) : (
-                      <span className="text-neutral-500">Disabled (HTTP)</span>
+                      <span className="text-slate-500 font-medium">HTTP only</span>
                     )}
                   </td>
                   <td className="py-3 px-4 text-right">
                     <button
                       type="button"
                       onClick={() => onDeleteDomain(dom.id)}
-                      className="text-neutral-500 hover:text-rose-400 p-1 rounded transition"
+                      className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition"
                       title="Delete domain"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -753,30 +750,30 @@ function AddDomainModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-neutral-900 border border-neutral-800 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-          <h3 className="text-base font-semibold text-white">Add Custom Domain</h3>
-          <button type="button" onClick={onClose} className="text-neutral-500 hover:text-neutral-300">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 className="text-base font-bold text-slate-900">Add Custom Domain</h3>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <XCircle className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1">Host Domain</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Host Domain</label>
             <input
               type="text"
               required
               placeholder="e.g. app.example.com or myapp.local"
               value={host}
               onChange={(e) => setHost(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500 font-mono"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1">Container Port</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Container Port</label>
             <input
               type="number"
               required
@@ -784,35 +781,35 @@ function AddDomainModal({
               max={65535}
               value={containerPort}
               onChange={(e) => setContainerPort(Number(e.target.value))}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500 font-mono"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 font-mono"
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pt-1">
             <input
               type="checkbox"
               id="httpsEnabled"
               checked={httpsEnabled}
               onChange={(e) => setHttpsEnabled(e.target.checked)}
-              className="rounded bg-neutral-950 border-neutral-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-neutral-900"
+              className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
             />
-            <label htmlFor="httpsEnabled" className="text-xs text-neutral-300 select-none">
-              Enable Automatic SSL / HTTPS
+            <label htmlFor="httpsEnabled" className="text-xs font-medium text-slate-700 select-none cursor-pointer">
+              Enable Automatic SSL / HTTPS (Let&apos;s Encrypt)
             </label>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-neutral-800">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-xs font-medium transition text-neutral-300"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium transition text-slate-700"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-xs font-medium transition"
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-xs font-semibold transition shadow-xs"
             >
               {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>Add Domain</span>

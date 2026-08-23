@@ -15,6 +15,7 @@ export function executeCommandWithLogs(
   options: BuildOptions
 ): Promise<{ exitCode: number }> {
   return new Promise((resolve, reject) => {
+    let isSettled = false;
     const dir = path.dirname(options.logPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
@@ -26,36 +27,40 @@ export function executeCommandWithLogs(
       env: { ...process.env, ...options.env },
     });
 
-    proc.stdout.on("data", (data) => {
+    proc.stdout?.on("data", (data) => {
       const text = data.toString();
       logStream.write(text);
       options.onLog?.(text);
     });
 
-    proc.stderr.on("data", (data) => {
+    proc.stderr?.on("data", (data) => {
       const text = data.toString();
       logStream.write(text);
       options.onLog?.(text);
     });
+
+    const finish = (err?: Error, code: number = 0) => {
+      if (isSettled) return;
+      isSettled = true;
+      if (logStream.writableEnded) {
+        if (err) reject(err);
+        else if (code === 0) resolve({ exitCode: 0 });
+        else reject(new Error(`Command '${command} ${args.join(" ")}' failed with exit code ${code}`));
+      } else {
+        logStream.end(() => {
+          if (err) reject(err);
+          else if (code === 0) resolve({ exitCode: 0 });
+          else reject(new Error(`Command '${command} ${args.join(" ")}' failed with exit code ${code}`));
+        });
+      }
+    };
 
     proc.on("close", (code) => {
-      logStream.end(() => {
-        if (code === 0) {
-          resolve({ exitCode: 0 });
-        } else {
-          reject(
-            new Error(
-              `Command '${command} ${args.join(" ")}' failed with exit code ${code}`
-            )
-          );
-        }
-      });
+      finish(undefined, code ?? 0);
     });
 
     proc.on("error", (err) => {
-      logStream.end(() => {
-        reject(err);
-      });
+      finish(err);
     });
   });
 }

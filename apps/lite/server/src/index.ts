@@ -10,6 +10,19 @@ import { applicationRouter } from "./routes/applications.js";
 import { deploymentRouter } from "./routes/deployments.js";
 import { domainRouter } from "./routes/domains.js";
 import { setupWebSocket, broadcastLog, wsClients } from "./wss/index.js";
+import { jobQueue } from "./queue/jobQueue.js";
+import { executeDeployment, recoverStaleDeployments } from "./services/deploymentService.js";
+
+if (process.env.NODE_ENV !== "test") {
+  // Register in-process job handlers
+  jobQueue.registerHandler("deploy", async (payload) => {
+    await executeDeployment(payload);
+  });
+
+  // Startup recovery for interrupted or stale pending deployments
+  jobQueue.recoverInterruptedJobs().catch(() => {});
+  recoverStaleDeployments().catch(() => {});
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -105,4 +118,4 @@ if (process.env.NODE_ENV !== "test") {
   });
 }
 
-export { app, server, broadcastLog, wsClients };
+export { app, server, broadcastLog, wsClients, jobQueue };

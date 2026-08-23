@@ -43,7 +43,12 @@ yarn-error.log*
 *.pem
 
 
+# Database & Local Data
 .db
+.data
+*.db
+*.db-wal
+*.db-shm
 
 .playwright-*
 .credentials

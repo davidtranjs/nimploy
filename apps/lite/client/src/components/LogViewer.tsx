@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Terminal, Play, Pause, Trash2, Copy, Download, Wifi, WifiOff } from "lucide-react";
+import { Terminal, Play, Pause, Trash2, Copy, Download } from "lucide-react";
 
 interface LogViewerProps {
   appId: string;
@@ -66,14 +66,12 @@ export function LogViewer({ appId, deploymentId, title = "Live Build & Deploymen
               setLogs((prev) => [...prev, ...lines]);
             }
           } catch {
-            // If raw text
             setLogs((prev) => [...prev, event.data]);
           }
         };
 
         ws.onclose = () => {
           setIsConnected(false);
-          // Try reconnect after 3 seconds
           reconnectTimeout = setTimeout(connect, 3000);
         };
 
@@ -127,47 +125,47 @@ export function LogViewer({ appId, deploymentId, title = "Live Build & Deploymen
   };
 
   return (
-    <div className="flex flex-col h-full border border-neutral-800 rounded-lg bg-neutral-950 overflow-hidden shadow-xl">
-      {/* Header Bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-neutral-900 border-b border-neutral-800 text-xs select-none">
+    <div className="flex flex-col h-full border border-slate-200 rounded-xl bg-slate-950 overflow-hidden shadow-md">
+      {/* Header Bar (Light themed top control bar) */}
+      <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100 border-b border-slate-200 text-xs select-none">
         <div className="flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-emerald-400" />
-          <span className="font-semibold text-neutral-200">{title}</span>
-          <div className="flex items-center gap-1.5 ml-2 px-2 py-0.5 rounded-full text-[10px] bg-neutral-800 border border-neutral-700">
+          <Terminal className="w-4 h-4 text-emerald-600" />
+          <span className="font-semibold text-slate-800">{title}</span>
+          <div className="flex items-center gap-1.5 ml-2 px-2 py-0.5 rounded-full text-[10px] bg-white border border-slate-200 shadow-2xs">
             {isConnected ? (
               <>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-emerald-400 font-medium">LIVE</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-emerald-700 font-semibold">LIVE</span>
               </>
             ) : (
               <>
-                <span className="w-1.5 h-1.5 rounded-full bg-neutral-500" />
-                <span className="text-neutral-400 font-medium">DISCONNECTED</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                <span className="text-slate-500 font-medium">DISCONNECTED</span>
               </>
             )}
           </div>
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setAutoScroll(!autoScroll)}
-            className={`p-1.5 rounded flex items-center gap-1 transition ${
+            className={`px-2 py-1 rounded-lg flex items-center gap-1.5 transition font-medium text-xs ${
               autoScroll
-                ? "bg-emerald-950 text-emerald-300 border border-emerald-800 hover:bg-emerald-900"
-                : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
             }`}
             title={autoScroll ? "Pause auto-scroll" : "Enable auto-scroll"}
           >
-            {autoScroll ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            <span className="text-[11px] hidden sm:inline">{autoScroll ? "Auto-scroll On" : "Paused"}</span>
+            {autoScroll ? <Pause className="w-3.5 h-3.5 text-emerald-600" /> : <Play className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{autoScroll ? "Auto-scroll On" : "Paused"}</span>
           </button>
 
           <button
             type="button"
             onClick={handleCopy}
-            className="p-1.5 rounded text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 transition"
+            className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition"
             title="Copy logs"
           >
             <Copy className="w-3.5 h-3.5" />
@@ -176,7 +174,7 @@ export function LogViewer({ appId, deploymentId, title = "Live Build & Deploymen
           <button
             type="button"
             onClick={handleDownload}
-            className="p-1.5 rounded text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 transition"
+            className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition"
             title="Download logs"
           >
             <Download className="w-3.5 h-3.5" />
@@ -185,7 +183,7 @@ export function LogViewer({ appId, deploymentId, title = "Live Build & Deploymen
           <button
             type="button"
             onClick={handleClear}
-            className="p-1.5 rounded text-neutral-400 hover:bg-neutral-800 hover:text-rose-400 transition"
+            className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition"
             title="Clear view"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -196,13 +194,13 @@ export function LogViewer({ appId, deploymentId, title = "Live Build & Deploymen
       {/* Terminal Output Area */}
       <div
         ref={logContainerRef}
-        className="flex-1 p-4 font-mono text-xs text-neutral-300 bg-neutral-950 overflow-y-auto leading-relaxed min-h-[360px] max-h-[600px]"
+        className="flex-1 p-4 font-mono text-xs text-slate-200 bg-slate-950 overflow-y-auto leading-relaxed min-h-[360px] max-h-[600px]"
       >
         {logs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-neutral-600 space-y-2">
-            <Terminal className="w-8 h-8 opacity-40" />
-            <p>Waiting for output stream...</p>
-            <span className="text-[11px] text-neutral-700">Logs will stream here automatically on build or deploy</span>
+          <div className="flex flex-col items-center justify-center h-48 text-slate-500 space-y-2">
+            <Terminal className="w-8 h-8 opacity-40 text-slate-400" />
+            <p className="font-medium text-slate-400">Waiting for output stream...</p>
+            <span className="text-[11px] text-slate-600">Logs will stream here automatically on build or deploy</span>
           </div>
         ) : (
           <div className="space-y-0.5">
@@ -214,17 +212,17 @@ export function LogViewer({ appId, deploymentId, title = "Live Build & Deploymen
               return (
                 <div
                   key={idx}
-                  className={`flex gap-3 hover:bg-neutral-900/50 py-0.5 px-1 rounded ${
+                  className={`flex gap-3 hover:bg-slate-900/60 py-0.5 px-1 rounded ${
                     isError
-                      ? "text-rose-400 bg-rose-950/20"
+                      ? "text-rose-400 bg-rose-950/30"
                       : isSuccess
-                      ? "text-emerald-400"
+                      ? "text-emerald-400 font-medium"
                       : isStep
                       ? "text-cyan-400 font-semibold"
-                      : "text-neutral-300"
+                      : "text-slate-200"
                   }`}
                 >
-                  <span className="text-neutral-600 select-none text-[11px] w-8 text-right shrink-0">
+                  <span className="text-slate-600 select-none text-[11px] w-8 text-right shrink-0">
                     {idx + 1}
                   </span>
                   <span className="break-all whitespace-pre-wrap flex-1">{line || " "}</span>
@@ -236,9 +234,9 @@ export function LogViewer({ appId, deploymentId, title = "Live Build & Deploymen
       </div>
 
       {/* Footer / Status */}
-      <div className="px-4 py-1.5 bg-neutral-900/80 border-t border-neutral-800 text-[11px] text-neutral-500 flex items-center justify-between">
+      <div className="px-4 py-1.5 bg-slate-900 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
         <span>{logs.length} total lines</span>
-        {copied && <span className="text-emerald-400 font-medium animate-pulse">Copied to clipboard!</span>}
+        {copied && <span className="text-emerald-400 font-semibold animate-pulse">Copied to clipboard!</span>}
       </div>
     </div>
   );

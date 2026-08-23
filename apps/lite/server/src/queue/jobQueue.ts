@@ -1,6 +1,7 @@
 import PQueue from "p-queue";
 import { eq } from "drizzle-orm";
 import * as schema from "../db/schema.js";
+import { db } from "../db/index.js";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 
 export type JobHandler = (payload: any, logStream: (msg: string) => void) => Promise<void>;
@@ -131,3 +132,5 @@ export class JobQueue {
     return this.queue.pending;
   }
 }
+
+export const jobQueue = new JobQueue(db, { concurrency: 1 });
