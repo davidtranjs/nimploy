@@ -3,10 +3,14 @@ import {
 	QueryClientProvider,
 	useQuery,
 } from "@tanstack/react-query";
-import { Activity, Cpu, Server } from "lucide-react";
+import { Activity, Cpu, Loader2, LogOut, Server } from "lucide-react";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { useEffect, useState } from "react";
+import { Button } from "./components/ui/button";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { apiFetch } from "./lib/api";
 import { AppDetailsPage } from "./pages/AppDetailsPage";
+import { LoginPage } from "./pages/LoginPage";
 import { ProjectDetailsPage } from "./pages/ProjectDetailsPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { navigateTo, parseRoute, type Route } from "./router";
@@ -24,13 +28,16 @@ export default function App() {
 	return (
 		<NuqsAdapter>
 			<QueryClientProvider client={queryClient}>
-				<DashboardRoot />
+				<AuthProvider>
+					<DashboardRoot />
+				</AuthProvider>
 			</QueryClientProvider>
 		</NuqsAdapter>
 	);
 }
 
 function DashboardRoot() {
+	const { user, isLoading, logout } = useAuth();
 	const [currentRoute, setCurrentRoute] = useState<Route>(() =>
 		parseRoute(window.location.pathname, window.location.search),
 	);
@@ -44,6 +51,18 @@ function DashboardRoot() {
 		window.addEventListener("popstate", onPopState);
 		return () => window.removeEventListener("popstate", onPopState);
 	}, []);
+
+	if (isLoading) {
+		return (
+			<div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-500">
+				<Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+			</div>
+		);
+	}
+
+	if (!user) {
+		return <LoginPage />;
+	}
 
 	return (
 		<div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
@@ -63,7 +82,24 @@ function DashboardRoot() {
 					</div>
 				</div>
 
-				<ServerStatsHeader />
+				<div className="flex items-center gap-3">
+					<ServerStatsHeader />
+					<div className="h-4 w-px bg-slate-200" />
+					<div className="flex items-center gap-2">
+						<span className="text-xs font-medium text-slate-700">
+							{user.username}
+						</span>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => logout()}
+							className="text-xs text-slate-600 hover:text-slate-900"
+						>
+							<LogOut className="w-3.5 h-3.5" />
+							<span>Sign Out</span>
+						</Button>
+					</div>
+				</div>
 			</header>
 
 			{/* Main Content Area */}
@@ -88,7 +124,7 @@ function ServerStatsHeader() {
 		queryKey: ["health"],
 		queryFn: async () => {
 			try {
-				const res = await fetch("/api/health");
+				const res = await apiFetch("/api/health");
 				if (!res.ok) return null;
 				return res.json();
 			} catch {

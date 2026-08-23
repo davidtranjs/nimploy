@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FolderGit2, Loader2, Plus, Search, XCircle } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import { apiFetch } from "../lib/api";
 import { navigateTo } from "../router";
 
 export function ProjectsPage() {
@@ -12,7 +13,7 @@ export function ProjectsPage() {
 	const { data: projects, isLoading: projectsLoading } = useQuery({
 		queryKey: ["projects"],
 		queryFn: async () => {
-			const res = await fetch("/api/projects");
+			const res = await apiFetch("/api/projects");
 			if (!res.ok) throw new Error("Failed to fetch projects");
 			return res.json();
 		},
@@ -20,7 +21,7 @@ export function ProjectsPage() {
 
 	const createProjectMutation = useMutation({
 		mutationFn: async (data: { name: string; description: string }) => {
-			const res = await fetch("/api/projects", {
+			const res = await apiFetch("/api/projects", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(data),

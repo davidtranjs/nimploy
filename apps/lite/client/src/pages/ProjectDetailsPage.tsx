@@ -12,6 +12,7 @@ import {
 import type React from "react";
 import { useState } from "react";
 import { Breadcrumb } from "../components/Breadcrumb";
+import { apiFetch } from "../lib/api";
 import { navigateTo } from "../router";
 
 interface ProjectDetailsPageProps {
@@ -29,7 +30,7 @@ export function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
 	} = useQuery({
 		queryKey: ["project", projectId],
 		queryFn: async () => {
-			const res = await fetch(`/api/projects/${projectId}`);
+			const res = await apiFetch(`/api/projects/${projectId}`);
 			if (!res.ok) throw new Error("Failed to fetch project");
 			return res.json();
 		},
@@ -38,7 +39,7 @@ export function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
 	const { data: applications, isLoading: appsLoading } = useQuery({
 		queryKey: ["applications", projectId],
 		queryFn: async () => {
-			const res = await fetch(`/api/applications?projectId=${projectId}`);
+			const res = await apiFetch(`/api/applications?projectId=${projectId}`);
 			if (!res.ok) throw new Error("Failed to fetch applications");
 			return res.json();
 		},
@@ -46,7 +47,7 @@ export function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
 
 	const deleteProjectMutation = useMutation({
 		mutationFn: async () => {
-			const res = await fetch(`/api/projects/${project?.id || projectId}`, {
+			const res = await apiFetch(`/api/projects/${project?.id || projectId}`, {
 				method: "DELETE",
 			});
 			if (!res.ok) throw new Error("Failed to delete project");
@@ -60,7 +61,7 @@ export function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
 
 	const createAppMutation = useMutation({
 		mutationFn: async (data: any) => {
-			const res = await fetch("/api/applications", {
+			const res = await apiFetch("/api/applications", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ ...data, projectId: project?.id || projectId }),

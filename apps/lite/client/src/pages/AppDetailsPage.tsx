@@ -26,6 +26,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "../components/ui/dialog";
+import { apiFetch } from "../lib/api";
 import { navigateTo, replaceTo } from "../router";
 
 interface AppDetailsPageProps {
@@ -82,7 +83,7 @@ export function AppDetailsPage({
 		queryKey: ["application", appId, projectId],
 		queryFn: async () => {
 			const url = `/api/applications/${encodeURIComponent(appId)}${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ""}`;
-			const res = await fetch(url);
+			const res = await apiFetch(url);
 			if (!res.ok) throw new Error("Failed to fetch application");
 			return res.json();
 		},
@@ -93,7 +94,7 @@ export function AppDetailsPage({
 	const { data: deployments, isLoading: deploymentsLoading } = useQuery({
 		queryKey: ["deployments", resolvedAppId],
 		queryFn: async () => {
-			const res = await fetch(
+			const res = await apiFetch(
 				`/api/deployments?applicationId=${resolvedAppId}`,
 			);
 			if (!res.ok) throw new Error("Failed to fetch deployments");
@@ -105,7 +106,7 @@ export function AppDetailsPage({
 	const { data: containers, isLoading: containersLoading } = useQuery({
 		queryKey: ["containers", resolvedAppId],
 		queryFn: async () => {
-			const res = await fetch(
+			const res = await apiFetch(
 				`/api/applications/${encodeURIComponent(resolvedAppId)}/containers`,
 			);
 			if (!res.ok) throw new Error("Failed to fetch containers");
@@ -126,7 +127,7 @@ export function AppDetailsPage({
 	const { data: domains, isLoading: domainsLoading } = useQuery({
 		queryKey: ["domains", resolvedAppId],
 		queryFn: async () => {
-			const res = await fetch(`/api/domains?applicationId=${resolvedAppId}`);
+			const res = await apiFetch(`/api/domains?applicationId=${resolvedAppId}`);
 			if (!res.ok) throw new Error("Failed to fetch domains");
 			return res.json();
 		},
@@ -135,7 +136,7 @@ export function AppDetailsPage({
 	// Mutations
 	const deployMutation = useMutation({
 		mutationFn: async () => {
-			const res = await fetch("/api/deployments", {
+			const res = await apiFetch("/api/deployments", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ applicationId: resolvedAppId }),
@@ -154,7 +155,7 @@ export function AppDetailsPage({
 
 	const updateAppMutation = useMutation({
 		mutationFn: async (updatedData: any) => {
-			const res = await fetch(`/api/applications/${resolvedAppId}`, {
+			const res = await apiFetch(`/api/applications/${resolvedAppId}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(updatedData),
@@ -182,7 +183,7 @@ export function AppDetailsPage({
 		queryKey: ["project", targetProjectId],
 		queryFn: async () => {
 			if (!targetProjectId) return null;
-			const res = await fetch(
+			const res = await apiFetch(
 				`/api/projects/${encodeURIComponent(targetProjectId)}`,
 			);
 			if (!res.ok) return null;
@@ -216,7 +217,7 @@ export function AppDetailsPage({
 
 	const deleteAppMutation = useMutation({
 		mutationFn: async () => {
-			const res = await fetch(`/api/applications/${resolvedAppId}`, {
+			const res = await apiFetch(`/api/applications/${resolvedAppId}`, {
 				method: "DELETE",
 			});
 			if (!res.ok) throw new Error("Failed to delete application");
@@ -240,7 +241,7 @@ export function AppDetailsPage({
 			containerPort: number;
 			httpsEnabled: boolean;
 		}) => {
-			const res = await fetch("/api/domains", {
+			const res = await apiFetch("/api/domains", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -261,7 +262,7 @@ export function AppDetailsPage({
 
 	const deleteDomainMutation = useMutation({
 		mutationFn: async (domainId: string) => {
-			const res = await fetch(`/api/domains/${domainId}`, {
+			const res = await apiFetch(`/api/domains/${domainId}`, {
 				method: "DELETE",
 			});
 			if (!res.ok) throw new Error("Failed to delete domain");

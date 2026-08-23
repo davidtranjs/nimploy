@@ -4,11 +4,21 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { WebSocket } from "ws";
 import { app, broadcastLog } from "../src/index";
+import { createSession } from "../src/services/authService";
 import { setupWebSocket } from "../src/wss/index";
+
+const authToken = createSession("admin");
+const request = (path: string, options: RequestInit = {}) => {
+	const headers = new Headers(options.headers || {});
+	if (!headers.has("Authorization")) {
+		headers.set("Authorization", `Bearer ${authToken}`);
+	}
+	return app.request(path, { ...options, headers });
+};
 
 describe("Nimploy Lite HTTP API", () => {
 	it("should respond to health check with memory usage info", async () => {
-		const res = await app.request("/api/health");
+		const res = await request("/api/health");
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.status).toBe("ok");
@@ -19,7 +29,7 @@ describe("Nimploy Lite HTTP API", () => {
 	describe("Projects Route", () => {
 		it("should handle project lifecycle (create, list, get, patch, delete)", async () => {
 			// 1. Create project
-			const createRes = await app.request("/api/projects", {
+			const createRes = await request("/api/projects", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -35,21 +45,21 @@ describe("Nimploy Lite HTTP API", () => {
 			const projectId = created.id;
 
 			// 2. List projects
-			const listRes = await app.request("/api/projects");
+			const listRes = await request("/api/projects");
 			expect(listRes.status).toBe(200);
 			const list = await listRes.json();
 			expect(Array.isArray(list)).toBe(true);
 			expect(list.some((p: any) => p.id === projectId)).toBe(true);
 
 			// 3. Get single project
-			const getRes = await app.request(`/api/projects/${projectId}`);
+			const getRes = await request(`/api/projects/${projectId}`);
 			expect(getRes.status).toBe(200);
 			const single = await getRes.json();
 			expect(single.id).toBe(projectId);
 			expect(single.name).toBe("Test Project");
 
 			// 4. Patch project
-			const patchRes = await app.request(`/api/projects/${projectId}`, {
+			const patchRes = await request(`/api/projects/${projectId}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -61,7 +71,7 @@ describe("Nimploy Lite HTTP API", () => {
 			expect(patched.description).toBe("Updated description");
 
 			// 5. Delete project
-			const deleteRes = await app.request(`/api/projects/${projectId}`, {
+			const deleteRes = await request(`/api/projects/${projectId}`, {
 				method: "DELETE",
 			});
 			expect(deleteRes.status).toBe(200);
@@ -69,12 +79,12 @@ describe("Nimploy Lite HTTP API", () => {
 			expect(deleteBody.success).toBe(true);
 
 			// Verify deletion
-			const getAfterDelete = await app.request(`/api/projects/${projectId}`);
+			const getAfterDelete = await request(`/api/projects/${projectId}`);
 			expect(getAfterDelete.status).toBe(404);
 		});
 
 		it("should validate project creation payload", async () => {
-			const res = await app.request("/api/projects", {
+			const res = await request("/api/projects", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({}),
@@ -83,7 +93,7 @@ describe("Nimploy Lite HTTP API", () => {
 		});
 
 		it("should return 404 for non-existent project patch", async () => {
-			const res = await app.request("/api/projects/non-existent-id", {
+			const res = await request("/api/projects/non-existent-id", {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ name: "New Name" }),
@@ -92,7 +102,7 @@ describe("Nimploy Lite HTTP API", () => {
 		});
 
 		it("should generate friendly slugs and handle collisions and lookups by slug", async () => {
-			const res1 = await app.request("/api/projects", {
+			const res1 = await request("/api/projects", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ name: "Slug Unique Project" }),
@@ -101,7 +111,7 @@ describe("Nimploy Lite HTTP API", () => {
 			const proj1 = await res1.json();
 			expect(proj1.slug).toBe("slug-unique-project");
 
-			const res2 = await app.request("/api/projects", {
+			const res2 = await request("/api/projects", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ name: "Slug Unique Project" }),
@@ -110,13 +120,13 @@ describe("Nimploy Lite HTTP API", () => {
 			const proj2 = await res2.json();
 			expect(proj2.slug).toBe("slug-unique-project-2");
 
-			const getBySlug = await app.request(`/api/projects/${proj1.slug}`);
+			const getBySlug = await request(`/api/projects/${proj1.slug}`);
 			expect(getBySlug.status).toBe(200);
 			const fetched = await getBySlug.json();
 			expect(fetched.id).toBe(proj1.id);
 
-			await app.request(`/api/projects/${proj1.id}`, { method: "DELETE" });
-			await app.request(`/api/projects/${proj2.id}`, { method: "DELETE" });
+			await request(`/api/projects/${proj1.id}`, { method: "DELETE" });
+			await request(`/api/projects/${proj2.id}`, { method: "DELETE" });
 		});
 	});
 
@@ -124,7 +134,7 @@ describe("Nimploy Lite HTTP API", () => {
 		let testProjectId: string;
 
 		beforeEach(async () => {
-			const projRes = await app.request("/api/projects", {
+			const projRes = await request("/api/projects", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ name: "App Test Project" }),
@@ -135,7 +145,7 @@ describe("Nimploy Lite HTTP API", () => {
 
 		afterEach(async () => {
 			if (testProjectId) {
-				await app.request(`/api/projects/${testProjectId}`, {
+				await request(`/api/projects/${testProjectId}`, {
 					method: "DELETE",
 				});
 			}
@@ -143,7 +153,7 @@ describe("Nimploy Lite HTTP API", () => {
 
 		it("should handle application lifecycle (create, list, get, patch, delete)", async () => {
 			// 1. Create application
-			const createRes = await app.request("/api/applications", {
+			const createRes = await request("/api/applications", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -166,7 +176,7 @@ describe("Nimploy Lite HTTP API", () => {
 			const appId = appData.id;
 
 			// 2. List applications by projectId
-			const listRes = await app.request(
+			const listRes = await request(
 				`/api/applications?projectId=${testProjectId}`,
 			);
 			expect(listRes.status).toBe(200);
@@ -175,14 +185,14 @@ describe("Nimploy Lite HTTP API", () => {
 			expect(apps[0].id).toBe(appId);
 
 			// 3. Get single application
-			const getRes = await app.request(`/api/applications/${appId}`);
+			const getRes = await request(`/api/applications/${appId}`);
 			expect(getRes.status).toBe(200);
 			const singleApp = await getRes.json();
 			expect(singleApp.id).toBe(appId);
 			expect(singleApp.name).toBe("My Web App");
 
 			// 4. Update application
-			const updateRes = await app.request(`/api/applications/${appId}`, {
+			const updateRes = await request(`/api/applications/${appId}`, {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -196,17 +206,17 @@ describe("Nimploy Lite HTTP API", () => {
 			expect(updated.branch).toBe("develop");
 
 			// 5. Delete application
-			const deleteRes = await app.request(`/api/applications/${appId}`, {
+			const deleteRes = await request(`/api/applications/${appId}`, {
 				method: "DELETE",
 			});
 			expect(deleteRes.status).toBe(200);
 
-			const getAfterDelete = await app.request(`/api/applications/${appId}`);
+			const getAfterDelete = await request(`/api/applications/${appId}`);
 			expect(getAfterDelete.status).toBe(404);
 		});
 
 		it("should validate application creation payload", async () => {
-			const res = await app.request("/api/applications", {
+			const res = await request("/api/applications", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ name: "Incomplete App" }),
@@ -215,10 +225,10 @@ describe("Nimploy Lite HTTP API", () => {
 		});
 
 		it("should return 404 for non-existent application get/patch", async () => {
-			const getRes = await app.request("/api/applications/non-existent");
+			const getRes = await request("/api/applications/non-existent");
 			expect(getRes.status).toBe(404);
 
-			const patchRes = await app.request("/api/applications/non-existent", {
+			const patchRes = await request("/api/applications/non-existent", {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ name: "New" }),
@@ -227,7 +237,7 @@ describe("Nimploy Lite HTTP API", () => {
 		});
 
 		it("should generate unique app slugs and support lookup by slug and project slug", async () => {
-			const res1 = await app.request("/api/applications", {
+			const res1 = await request("/api/applications", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -240,7 +250,7 @@ describe("Nimploy Lite HTTP API", () => {
 			const app1 = await res1.json();
 			expect(app1.slug).toBe("frontend-service");
 
-			const res2 = await app.request("/api/applications", {
+			const res2 = await request("/api/applications", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -253,7 +263,7 @@ describe("Nimploy Lite HTTP API", () => {
 			const app2 = await res2.json();
 			expect(app2.slug).toBe("frontend-service-2");
 
-			const getBySlug = await app.request(
+			const getBySlug = await request(
 				`/api/applications/${app1.slug}?projectId=${testProjectId}`,
 			);
 			expect(getBySlug.status).toBe(200);
@@ -262,7 +272,7 @@ describe("Nimploy Lite HTTP API", () => {
 		});
 
 		it("should return container logs text or error for an application", async () => {
-			const createRes = await app.request("/api/applications", {
+			const createRes = await request("/api/applications", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -273,14 +283,14 @@ describe("Nimploy Lite HTTP API", () => {
 			});
 			const created = await createRes.json();
 
-			const logsRes = await app.request(
+			const logsRes = await request(
 				`/api/applications/${created.id}/container-logs`,
 			);
 			expect(logsRes.status).toBe(200);
 			const text = await logsRes.text();
 			expect(typeof text).toBe("string");
 
-			const notFoundRes = await app.request(
+			const notFoundRes = await request(
 				"/api/applications/non-existent/container-logs",
 			);
 			expect(notFoundRes.status).toBe(404);
@@ -292,7 +302,7 @@ describe("Nimploy Lite HTTP API", () => {
 		let testAppId: string;
 
 		beforeEach(async () => {
-			const projRes = await app.request("/api/projects", {
+			const projRes = await request("/api/projects", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ name: "Deploy Test Project" }),
@@ -300,7 +310,7 @@ describe("Nimploy Lite HTTP API", () => {
 			const proj = await projRes.json();
 			testProjectId = proj.id;
 
-			const appRes = await app.request("/api/applications", {
+			const appRes = await request("/api/applications", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -315,7 +325,7 @@ describe("Nimploy Lite HTTP API", () => {
 
 		afterEach(async () => {
 			if (testProjectId) {
-				await app.request(`/api/projects/${testProjectId}`, {
+				await request(`/api/projects/${testProjectId}`, {
 					method: "DELETE",
 				});
 			}
@@ -323,7 +333,7 @@ describe("Nimploy Lite HTTP API", () => {
 
 		it("should trigger a deployment and query its status and logs", async () => {
 			// 1. Trigger deployment
-			const triggerRes = await app.request("/api/deployments", {
+			const triggerRes = await request("/api/deployments", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -347,7 +357,7 @@ describe("Nimploy Lite HTTP API", () => {
 			}
 
 			// 2. List deployments for application
-			const listRes = await app.request(
+			const listRes = await request(
 				`/api/deployments?applicationId=${testAppId}`,
 			);
 			expect(listRes.status).toBe(200);
@@ -356,22 +366,20 @@ describe("Nimploy Lite HTTP API", () => {
 			expect(deployments[0].id).toBe(deployment.id);
 
 			// 3. Get single deployment
-			const getRes = await app.request(`/api/deployments/${deployment.id}`);
+			const getRes = await request(`/api/deployments/${deployment.id}`);
 			expect(getRes.status).toBe(200);
 			const single = await getRes.json();
 			expect(single.id).toBe(deployment.id);
 
 			// 4. Get deployment logs
-			const logsRes = await app.request(
-				`/api/deployments/${deployment.id}/logs`,
-			);
+			const logsRes = await request(`/api/deployments/${deployment.id}/logs`);
 			expect(logsRes.status).toBe(200);
 			const logsText = await logsRes.text();
 			expect(logsText).toContain("Deploy step 1 OK");
 		});
 
 		it("should validate deployment trigger payload", async () => {
-			const res = await app.request("/api/deployments", {
+			const res = await request("/api/deployments", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({}),
@@ -385,7 +393,7 @@ describe("Nimploy Lite HTTP API", () => {
 		let testAppId: string;
 
 		beforeEach(async () => {
-			const projRes = await app.request("/api/projects", {
+			const projRes = await request("/api/projects", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ name: "Domain Test Project" }),
@@ -393,7 +401,7 @@ describe("Nimploy Lite HTTP API", () => {
 			const proj = await projRes.json();
 			testProjectId = proj.id;
 
-			const appRes = await app.request("/api/applications", {
+			const appRes = await request("/api/applications", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -408,7 +416,7 @@ describe("Nimploy Lite HTTP API", () => {
 
 		afterEach(async () => {
 			if (testProjectId) {
-				await app.request(`/api/projects/${testProjectId}`, {
+				await request(`/api/projects/${testProjectId}`, {
 					method: "DELETE",
 				});
 			}
@@ -416,7 +424,7 @@ describe("Nimploy Lite HTTP API", () => {
 
 		it("should handle domain lifecycle (create, list, get, delete)", async () => {
 			// 1. Create domain
-			const createRes = await app.request("/api/domains", {
+			const createRes = await request("/api/domains", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -433,29 +441,27 @@ describe("Nimploy Lite HTTP API", () => {
 			expect(domain.containerPort).toBe(8080);
 
 			// 2. List domains
-			const listRes = await app.request(
-				`/api/domains?applicationId=${testAppId}`,
-			);
+			const listRes = await request(`/api/domains?applicationId=${testAppId}`);
 			expect(listRes.status).toBe(200);
 			const domains = await listRes.json();
 			expect(domains.length).toBe(1);
 			expect(domains[0].host).toBe("app.example.com");
 
 			// 3. Get single domain
-			const getRes = await app.request(`/api/domains/${domain.id}`);
+			const getRes = await request(`/api/domains/${domain.id}`);
 			expect(getRes.status).toBe(200);
 			const single = await getRes.json();
 			expect(single.id).toBe(domain.id);
 
 			// 4. Delete domain
-			const deleteRes = await app.request(`/api/domains/${domain.id}`, {
+			const deleteRes = await request(`/api/domains/${domain.id}`, {
 				method: "DELETE",
 			});
 			expect(deleteRes.status).toBe(200);
 			const delBody = await deleteRes.json();
 			expect(delBody.success).toBe(true);
 
-			const listAfter = await app.request(
+			const listAfter = await request(
 				`/api/domains?applicationId=${testAppId}`,
 			);
 			const domainsAfter = await listAfter.json();
@@ -463,7 +469,7 @@ describe("Nimploy Lite HTTP API", () => {
 		});
 
 		it("should validate domain creation payload", async () => {
-			const res = await app.request("/api/domains", {
+			const res = await request("/api/domains", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ host: "only-host.com" }),
@@ -565,20 +571,20 @@ describe("Nimploy Lite HTTP API", () => {
 
 	describe("Static SPA & Error Routing", () => {
 		it("should return 404 for unknown api routes", async () => {
-			const res = await app.request("/api/unknown-route-12345");
+			const res = await request("/api/unknown-route-12345");
 			expect(res.status).toBe(404);
 		});
 
 		it("should return SPA fallback for non-API route", async () => {
-			const res = await app.request("/dashboard/projects");
+			const res = await request("/dashboard/projects");
 			expect(res.status).toBe(200);
 		});
 
 		it("should return SPA fallback for project and app routes", async () => {
-			const projectRes = await app.request("/project/proj_123");
+			const projectRes = await request("/project/proj_123");
 			expect(projectRes.status).toBe(200);
 
-			const appRes = await app.request("/project/proj_123/app/app_456");
+			const appRes = await request("/project/proj_123/app/app_456");
 			expect(appRes.status).toBe(200);
 		});
 	});

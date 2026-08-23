@@ -3,9 +3,12 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getRequestListener } from "@hono/node-server";
+import dotenv from "dotenv";
 import { Hono } from "hono";
+import { authMiddleware } from "./middleware/auth.js";
 import { jobQueue } from "./queue/jobQueue.js";
 import { applicationRouter } from "./routes/applications.js";
+import { authRouter } from "./routes/auth.js";
 import { deploymentRouter } from "./routes/deployments.js";
 import { domainRouter } from "./routes/domains.js";
 import { projectRouter } from "./routes/projects.js";
@@ -14,6 +17,14 @@ import {
 	recoverStaleDeployments,
 } from "./services/deploymentService.js";
 import { broadcastLog, setupWebSocket, wsClients } from "./wss/index.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+dotenv.config({ path: path.resolve(process.cwd(), "apps/lite/.env") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 if (process.env.NODE_ENV !== "test") {
 	// Register in-process job handlers
@@ -26,12 +37,12 @@ if (process.env.NODE_ENV !== "test") {
 	recoverStaleDeployments().catch(() => {});
 }
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = new Hono();
 
+app.use("/api/*", authMiddleware);
+
 // Mount API routes
+app.route("/api/auth", authRouter);
 app.route("/api/projects", projectRouter);
 app.route("/api/applications", applicationRouter);
 app.route("/api/deployments", deploymentRouter);

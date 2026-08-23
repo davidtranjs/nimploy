@@ -1,5 +1,6 @@
 import { Copy, Download, Pause, Play, Terminal, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { apiFetch, getStoredToken } from "../lib/api";
 
 interface LogViewerProps {
 	appId: string;
@@ -45,7 +46,7 @@ export function LogViewer({
 							? `?containerName=${encodeURIComponent(containerName)}`
 							: ""
 					}`;
-					const res = await fetch(url);
+					const res = await apiFetch(url);
 					if (res.ok) {
 						const text = await res.text();
 						if (isMounted && text.trim().length > 0) {
@@ -53,7 +54,7 @@ export function LogViewer({
 						}
 					}
 				} else if (deploymentId) {
-					const res = await fetch(
+					const res = await apiFetch(
 						`/api/deployments/${encodeURIComponent(deploymentId)}/logs`,
 					);
 					if (res.ok) {
@@ -86,6 +87,10 @@ export function LogViewer({
 		}
 		if (containerName) {
 			queryParams.set("containerName", containerName);
+		}
+		const token = getStoredToken();
+		if (token) {
+			queryParams.set("token", token);
 		}
 		const wsUrl = `${protocol}//${host}/ws?${queryParams.toString()}`;
 
