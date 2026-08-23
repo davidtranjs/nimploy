@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { db, schema } from "../db/index.js";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { jobQueue } from "../queue/jobQueue.js";
 import fs from "node:fs";
@@ -19,10 +19,15 @@ export const deploymentRouter = new Hono()
   .get("/", async (c) => {
     const applicationId = c.req.query("applicationId");
     if (applicationId) {
+      const [app] = await db
+        .select()
+        .from(schema.applications)
+        .where(or(eq(schema.applications.id, applicationId), eq(schema.applications.slug, applicationId)));
+      const resolvedAppId = app ? app.id : applicationId;
       const list = await db
         .select()
         .from(schema.deployments)
-        .where(eq(schema.deployments.applicationId, applicationId))
+        .where(eq(schema.deployments.applicationId, resolvedAppId))
         .orderBy(desc(schema.deployments.startedAt));
       return c.json(list);
     }
@@ -68,11 +73,17 @@ export const deploymentRouter = new Hono()
       return c.json({ error: "applicationId is required" }, 400);
     }
 
+    const [app] = await db
+      .select()
+      .from(schema.applications)
+      .where(or(eq(schema.applications.id, String(body.applicationId)), eq(schema.applications.slug, String(body.applicationId))));
+    const resolvedAppId = app ? app.id : String(body.applicationId);
+
     const id = nanoid(10);
     const logPath = path.join(LOGS_DIR, `${id}.log`);
     const newDeployment = {
       id,
-      applicationId: String(body.applicationId),
+      applicationId: resolvedAppId,
       status: "PENDING",
       commitHash: body.commitHash ? String(body.commitHash) : null,
       logPath,
@@ -84,11 +95,11 @@ export const deploymentRouter = new Hono()
 
     await jobQueue.addJob({
       id: `job-${id}`,
-      applicationId: String(body.applicationId),
+      applicationId: resolvedAppId,
       jobType: "deploy",
       payload: {
         deploymentId: id,
-        applicationId: String(body.applicationId),
+        applicationId: resolvedAppId,
         logPath,
         commitHash: newDeployment.commitHash,
       },

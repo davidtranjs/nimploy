@@ -1,19 +1,26 @@
 import { Hono } from "hono";
-import { db, schema } from "../db/index.js";
-import { eq } from "drizzle-orm";
+import { db, schema, sqlite } from "../db/index.js";
+import { eq, or, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { jobQueue } from "../queue/jobQueue.js";
+import { generateUniqueAppSlug } from "../utils/slug.js";
 import path from "node:path";
 import fs from "node:fs";
 
 export const applicationRouter = new Hono()
   .get("/", async (c) => {
-    const projectId = c.req.query("projectId");
-    if (projectId) {
+    const projectIdParam = c.req.query("projectId");
+    if (projectIdParam) {
+      const [proj] = await db
+        .select()
+        .from(schema.projects)
+        .where(or(eq(schema.projects.id, projectIdParam), eq(schema.projects.slug, projectIdParam)));
+
+      const resolvedProjectId = proj ? proj.id : projectIdParam;
       const list = await db
         .select()
         .from(schema.applications)
-        .where(eq(schema.applications.projectId, projectId));
+        .where(eq(schema.applications.projectId, resolvedProjectId));
       return c.json(list);
     }
     const list = await db.select().from(schema.applications);
@@ -21,10 +28,31 @@ export const applicationRouter = new Hono()
   })
   .get("/:id", async (c) => {
     const id = c.req.param("id");
+    const projectIdParam = c.req.query("projectId");
+
+    let resolvedProjectId: string | undefined;
+    if (projectIdParam) {
+      const [proj] = await db
+        .select()
+        .from(schema.projects)
+        .where(or(eq(schema.projects.id, projectIdParam), eq(schema.projects.slug, projectIdParam)));
+      if (proj) {
+        resolvedProjectId = proj.id;
+      }
+    }
+
+    let queryCondition = or(eq(schema.applications.id, id), eq(schema.applications.slug, id));
+    if (resolvedProjectId) {
+      queryCondition = and(
+        eq(schema.applications.projectId, resolvedProjectId),
+        or(eq(schema.applications.id, id), eq(schema.applications.slug, id))
+      )!;
+    }
+
     const [appItem] = await db
       .select()
       .from(schema.applications)
-      .where(eq(schema.applications.id, id));
+      .where(queryCondition);
 
     if (!appItem) {
       return c.json({ error: "Application not found" }, 404);
@@ -40,7 +68,15 @@ export const applicationRouter = new Hono()
       );
     }
 
+    const [proj] = await db
+      .select()
+      .from(schema.projects)
+      .where(or(eq(schema.projects.id, String(body.projectId)), eq(schema.projects.slug, String(body.projectId))));
+
+    const resolvedProjectId = proj ? proj.id : String(body.projectId);
+
     const id = nanoid(10);
+    const slug = generateUniqueAppSlug(sqlite, resolvedProjectId, body.slug || body.name);
     const createdAt = Date.now();
     const envVars =
       typeof body.envVars === "object"
@@ -51,8 +87,9 @@ export const applicationRouter = new Hono()
 
     const newApp = {
       id,
-      projectId: String(body.projectId),
+      projectId: resolvedProjectId,
       name: String(body.name),
+      slug,
       appType: String(body.appType),
       repositoryUrl: body.repositoryUrl ? String(body.repositoryUrl) : null,
       branch: body.branch ? String(body.branch) : "main",
@@ -102,6 +139,15 @@ export const applicationRouter = new Hono()
     const id = c.req.param("id");
     const body = await c.req.json().catch(() => ({}));
 
+    const [existing] = await db
+      .select()
+      .from(schema.applications)
+      .where(or(eq(schema.applications.id, id), eq(schema.applications.slug, id)));
+
+    if (!existing) {
+      return c.json({ error: "Application not found" }, 404);
+    }
+
     const updateData: Partial<typeof schema.applications.$inferInsert> = {};
     if (body.name !== undefined) updateData.name = String(body.name);
     if (body.appType !== undefined) updateData.appType = String(body.appType);
@@ -110,26 +156,35 @@ export const applicationRouter = new Hono()
     if (body.dockerfilePath !== undefined) updateData.dockerfilePath = String(body.dockerfilePath);
     if (body.composePath !== undefined) updateData.composePath = String(body.composePath);
     if (body.dockerImage !== undefined) updateData.dockerImage = body.dockerImage ? String(body.dockerImage) : null;
+    if (body.slug !== undefined && String(body.slug).trim()) {
+      updateData.slug = generateUniqueAppSlug(sqlite, existing.projectId, String(body.slug), existing.id);
+    }
     if (body.envVars !== undefined) {
       updateData.envVars =
         typeof body.envVars === "object"
           ? JSON.stringify(body.envVars)
-        : String(body.envVars);
+          : String(body.envVars);
     }
 
     const [updated] = await db
       .update(schema.applications)
       .set(updateData)
-      .where(eq(schema.applications.id, id))
+      .where(eq(schema.applications.id, existing.id))
       .returning();
 
-    if (!updated) {
-      return c.json({ error: "Application not found" }, 404);
-    }
-    return c.json(updated);
+    return c.json(updated || existing);
   })
   .delete("/:id", async (c) => {
     const id = c.req.param("id");
-    await db.delete(schema.applications).where(eq(schema.applications.id, id));
+    const [existing] = await db
+      .select()
+      .from(schema.applications)
+      .where(or(eq(schema.applications.id, id), eq(schema.applications.slug, id)));
+
+    if (!existing) {
+      return c.json({ error: "Application not found" }, 404);
+    }
+
+    await db.delete(schema.applications).where(eq(schema.applications.id, existing.id));
     return c.json({ success: true });
   });

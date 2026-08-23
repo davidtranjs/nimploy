@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { db, schema } from "../db/index.js";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { syncCaddyConfig } from "../services/deploymentService.js";
 
@@ -8,10 +8,15 @@ export const domainRouter = new Hono()
   .get("/", async (c) => {
     const applicationId = c.req.query("applicationId");
     if (applicationId) {
+      const [app] = await db
+        .select()
+        .from(schema.applications)
+        .where(or(eq(schema.applications.id, applicationId), eq(schema.applications.slug, applicationId)));
+      const resolvedAppId = app ? app.id : applicationId;
       const list = await db
         .select()
         .from(schema.domains)
-        .where(eq(schema.domains.applicationId, applicationId));
+        .where(eq(schema.domains.applicationId, resolvedAppId));
       return c.json(list);
     }
     const list = await db.select().from(schema.domains);
@@ -38,10 +43,16 @@ export const domainRouter = new Hono()
       );
     }
 
+    const [app] = await db
+      .select()
+      .from(schema.applications)
+      .where(or(eq(schema.applications.id, String(body.applicationId)), eq(schema.applications.slug, String(body.applicationId))));
+    const resolvedAppId = app ? app.id : String(body.applicationId);
+
     const id = nanoid(10);
     const newDomain = {
       id,
-      applicationId: String(body.applicationId),
+      applicationId: resolvedAppId,
       host: String(body.host).trim().toLowerCase(),
       containerPort: Number(body.containerPort),
       httpsEnabled: body.httpsEnabled !== undefined ? (body.httpsEnabled ? 1 : 0) : 1,

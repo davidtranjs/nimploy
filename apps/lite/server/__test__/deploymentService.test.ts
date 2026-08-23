@@ -26,6 +26,7 @@ describe("Deployment Service", () => {
       CREATE TABLE IF NOT EXISTS projects (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
+        slug TEXT NOT NULL,
         description TEXT,
         created_at INTEGER NOT NULL
       );
@@ -33,6 +34,7 @@ describe("Deployment Service", () => {
         id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
         name TEXT NOT NULL,
+        slug TEXT NOT NULL,
         app_type TEXT NOT NULL,
         repository_url TEXT,
         branch TEXT DEFAULT 'main',
@@ -108,12 +110,14 @@ describe("Deployment Service", () => {
       await db.insert(schema.projects).values({
         id: "p1",
         name: "Test",
+        slug: "test",
         createdAt: Date.now(),
       });
       await db.insert(schema.applications).values({
         id: "a1",
         projectId: "p1",
         name: "App",
+        slug: "app",
         appType: "image",
         createdAt: Date.now(),
       });
@@ -168,12 +172,14 @@ describe("Deployment Service", () => {
       await db.insert(schema.projects).values({
         id: "p1",
         name: "Test",
+        slug: "test",
         createdAt: Date.now(),
       });
       await db.insert(schema.applications).values({
         id: "a-temp",
         projectId: "p1",
         name: "Temp App",
+        slug: "temp-app",
         appType: "image",
         createdAt: Date.now(),
       });
@@ -217,12 +223,14 @@ describe("Deployment Service", () => {
       await db.insert(schema.projects).values({
         id: "p1",
         name: "Test",
+        slug: "test",
         createdAt: Date.now(),
       });
       await db.insert(schema.applications).values({
         id: "a-no-img",
         projectId: "p1",
         name: "No Image App",
+        slug: "no-image-app",
         appType: "image",
         dockerImage: "",
         createdAt: Date.now(),

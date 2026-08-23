@@ -24,6 +24,7 @@ describe("SQLite Database & Schema", () => {
       CREATE TABLE IF NOT EXISTS projects (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
+        slug TEXT NOT NULL,
         description TEXT,
         created_at INTEGER NOT NULL
       );
@@ -31,7 +32,8 @@ describe("SQLite Database & Schema", () => {
         id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
         name TEXT NOT NULL,
-        app_type TEXT NOT NULL, -- 'dockerfile' | 'compose' | 'image'
+        slug TEXT NOT NULL,
+        app_type TEXT NOT NULL,
         repository_url TEXT,
         branch TEXT DEFAULT 'main',
         dockerfile_path TEXT DEFAULT 'Dockerfile',
@@ -43,7 +45,7 @@ describe("SQLite Database & Schema", () => {
       CREATE TABLE IF NOT EXISTS deployments (
         id TEXT PRIMARY KEY,
         application_id TEXT NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
-        status TEXT NOT NULL, -- 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'INTERRUPTED'
+        status TEXT NOT NULL,
         commit_hash TEXT,
         log_path TEXT,
         started_at INTEGER,
@@ -73,6 +75,7 @@ describe("SQLite Database & Schema", () => {
     await db.insert(schema.projects).values({
       id: projectId,
       name: "Demo Project",
+      slug: "demo-project",
       description: "Testing SQLite Schema",
       createdAt: Date.now(),
     });
@@ -82,6 +85,7 @@ describe("SQLite Database & Schema", () => {
       id: appId,
       projectId,
       name: "Web API",
+      slug: "web-api",
       appType: "dockerfile",
       repositoryUrl: "https://github.com/example/api.git",
       branch: "main",

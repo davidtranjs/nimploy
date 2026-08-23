@@ -91,6 +91,34 @@ describe("Nimploy Lite HTTP API", () => {
       });
       expect(res.status).toBe(404);
     });
+
+    it("should generate friendly slugs and handle collisions and lookups by slug", async () => {
+      const res1 = await app.request("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Slug Unique Project" }),
+      });
+      expect(res1.status).toBe(201);
+      const proj1 = await res1.json();
+      expect(proj1.slug).toBe("slug-unique-project");
+
+      const res2 = await app.request("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Slug Unique Project" }),
+      });
+      expect(res2.status).toBe(201);
+      const proj2 = await res2.json();
+      expect(proj2.slug).toBe("slug-unique-project-2");
+
+      const getBySlug = await app.request(`/api/projects/${proj1.slug}`);
+      expect(getBySlug.status).toBe(200);
+      const fetched = await getBySlug.json();
+      expect(fetched.id).toBe(proj1.id);
+
+      await app.request(`/api/projects/${proj1.id}`, { method: "DELETE" });
+      await app.request(`/api/projects/${proj2.id}`, { method: "DELETE" });
+    });
   });
 
   describe("Applications Route", () => {
@@ -193,6 +221,39 @@ describe("Nimploy Lite HTTP API", () => {
         body: JSON.stringify({ name: "New" }),
       });
       expect(patchRes.status).toBe(404);
+    });
+
+    it("should generate unique app slugs and support lookup by slug and project slug", async () => {
+      const res1 = await app.request("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: testProjectId,
+          name: "Frontend Service",
+          appType: "dockerfile",
+        }),
+      });
+      expect(res1.status).toBe(201);
+      const app1 = await res1.json();
+      expect(app1.slug).toBe("frontend-service");
+
+      const res2 = await app.request("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: testProjectId,
+          name: "Frontend Service",
+          appType: "dockerfile",
+        }),
+      });
+      expect(res2.status).toBe(201);
+      const app2 = await res2.json();
+      expect(app2.slug).toBe("frontend-service-2");
+
+      const getBySlug = await app.request(`/api/applications/${app1.slug}?projectId=${testProjectId}`);
+      expect(getBySlug.status).toBe(200);
+      const fetched = await getBySlug.json();
+      expect(fetched.id).toBe(app1.id);
     });
   });
 
@@ -446,6 +507,14 @@ describe("Nimploy Lite HTTP API", () => {
     it("should return SPA fallback for non-API route", async () => {
       const res = await app.request("/dashboard/projects");
       expect(res.status).toBe(200);
+    });
+
+    it("should return SPA fallback for project and app routes", async () => {
+      const projectRes = await app.request("/project/proj_123");
+      expect(projectRes.status).toBe(200);
+
+      const appRes = await app.request("/project/proj_123/app/app_456");
+      expect(appRes.status).toBe(200);
     });
   });
 });

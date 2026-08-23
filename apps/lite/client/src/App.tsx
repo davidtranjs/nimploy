@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Server, Activity, Cpu } from "lucide-react";
 import { ProjectsPage } from "./pages/ProjectsPage";
+import { ProjectDetailsPage } from "./pages/ProjectDetailsPage";
 import { AppDetailsPage } from "./pages/AppDetailsPage";
+import { Route, parseRoute, navigateTo } from "./router";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,26 +24,13 @@ export default function App() {
 }
 
 function DashboardRoot() {
-  const [selectedAppId, setSelectedAppId] = useState<string | null>(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("appId");
-  });
-
-  const handleSelectApp = (appId: string | null) => {
-    setSelectedAppId(appId);
-    const url = new URL(window.location.href);
-    if (appId) {
-      url.searchParams.set("appId", appId);
-    } else {
-      url.searchParams.delete("appId");
-    }
-    window.history.pushState({}, "", url.toString());
-  };
+  const [currentRoute, setCurrentRoute] = useState<Route>(() =>
+    parseRoute(window.location.pathname, window.location.search)
+  );
 
   useEffect(() => {
     const onPopState = () => {
-      const params = new URLSearchParams(window.location.search);
-      setSelectedAppId(params.get("appId"));
+      setCurrentRoute(parseRoute(window.location.pathname, window.location.search));
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -53,7 +42,7 @@ function DashboardRoot() {
       <header className="border-b border-slate-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-40 px-6 py-3.5 flex items-center justify-between shadow-xs">
         <div
           className="flex items-center gap-3 cursor-pointer select-none"
-          onClick={() => handleSelectApp(null)}
+          onClick={() => navigateTo({ type: "projects" })}
         >
           <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-xs">
             <Server className="w-4 h-4" />
@@ -68,10 +57,15 @@ function DashboardRoot() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-6">
-        {selectedAppId ? (
-          <AppDetailsPage appId={selectedAppId} onBack={() => handleSelectApp(null)} />
+        {currentRoute.type === "app" ? (
+          <AppDetailsPage
+            appId={currentRoute.appId}
+            projectId={currentRoute.projectId}
+          />
+        ) : currentRoute.type === "project" ? (
+          <ProjectDetailsPage projectId={currentRoute.projectId} />
         ) : (
-          <ProjectsPage onSelectApp={(id) => handleSelectApp(id)} />
+          <ProjectsPage />
         )}
       </main>
 

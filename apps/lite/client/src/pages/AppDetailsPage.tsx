@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -17,13 +17,15 @@ import {
   Save,
 } from "lucide-react";
 import { LogViewer } from "../components/LogViewer";
+import { navigateTo, replaceTo } from "../router";
 
 interface AppDetailsPageProps {
   appId: string;
-  onBack: () => void;
+  projectId?: string;
+  onBack?: () => void;
 }
 
-export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
+export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"overview" | "deployments" | "logs" | "domains">("overview");
   const [selectedDeploymentId, setSelectedDeploymentId] = useState<string | undefined>();
@@ -32,18 +34,21 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
 
   // Queries
   const { data: app, isLoading: appLoading, error: appError } = useQuery({
-    queryKey: ["application", appId],
+    queryKey: ["application", appId, projectId],
     queryFn: async () => {
-      const res = await fetch(`/api/applications/${appId}`);
+      const url = `/api/applications/${encodeURIComponent(appId)}${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ""}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch application");
       return res.json();
     },
   });
 
+  const resolvedAppId = app?.id || appId;
+
   const { data: deployments, isLoading: deploymentsLoading } = useQuery({
-    queryKey: ["deployments", appId],
+    queryKey: ["deployments", resolvedAppId],
     queryFn: async () => {
-      const res = await fetch(`/api/deployments?applicationId=${appId}`);
+      const res = await fetch(`/api/deployments?applicationId=${resolvedAppId}`);
       if (!res.ok) throw new Error("Failed to fetch deployments");
       return res.json();
     },
@@ -51,9 +56,9 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
   });
 
   const { data: domains, isLoading: domainsLoading } = useQuery({
-    queryKey: ["domains", appId],
+    queryKey: ["domains", resolvedAppId],
     queryFn: async () => {
-      const res = await fetch(`/api/domains?applicationId=${appId}`);
+      const res = await fetch(`/api/domains?applicationId=${resolvedAppId}`);
       if (!res.ok) throw new Error("Failed to fetch domains");
       return res.json();
     },
@@ -65,13 +70,13 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
       const res = await fetch("/api/deployments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ applicationId: appId }),
+        body: JSON.stringify({ applicationId: resolvedAppId }),
       });
       if (!res.ok) throw new Error("Failed to trigger deployment");
       return res.json();
     },
     onSuccess: (newDep) => {
-      queryClient.invalidateQueries({ queryKey: ["deployments", appId] });
+      queryClient.invalidateQueries({ queryKey: ["deployments", resolvedAppId] });
       setSelectedDeploymentId(newDep.id);
       setActiveTab("logs");
     },
@@ -79,7 +84,7 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
 
   const updateAppMutation = useMutation({
     mutationFn: async (updatedData: any) => {
-      const res = await fetch(`/api/applications/${appId}`, {
+      const res = await fetch(`/api/applications/${resolvedAppId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),
@@ -87,24 +92,58 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
       if (!res.ok) throw new Error("Failed to update application");
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["application", appId] });
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: ["application"] });
       setSaveSuccessMessage("Settings saved successfully!");
       setTimeout(() => setSaveSuccessMessage(null), 3000);
+      if (updated.slug && updated.slug !== appId) {
+        replaceTo({
+          type: "app",
+          projectId: projectId || app?.projectId,
+          appId: updated.slug,
+        });
+      }
     },
   });
 
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+    const targetProjectId = projectId || app?.projectId;
+    if (targetProjectId) {
+      navigateTo({ type: "project", projectId: targetProjectId });
+    } else {
+      navigateTo({ type: "projects" });
+    }
+  };
+
+  useEffect(() => {
+    if (app) {
+      const targetProj = projectId || app.projectId;
+      const targetApp = app.slug || app.id;
+      if (!projectId || appId === app.id) {
+        replaceTo({ type: "app", projectId: targetProj, appId: targetApp });
+      }
+    }
+  }, [projectId, app, appId]);
+
   const deleteAppMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`/api/applications/${appId}`, {
+      const res = await fetch(`/api/applications/${resolvedAppId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete application");
       return res.json();
     },
     onSuccess: () => {
+      const targetProjectId = projectId || app?.projectId;
       queryClient.invalidateQueries({ queryKey: ["applications"] });
-      onBack();
+      if (targetProjectId) {
+        queryClient.invalidateQueries({ queryKey: ["applications", targetProjectId] });
+      }
+      handleBack();
     },
   });
 
@@ -114,7 +153,7 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          applicationId: appId,
+          applicationId: resolvedAppId,
           host: domainData.host,
           containerPort: Number(domainData.containerPort),
           httpsEnabled: domainData.httpsEnabled ? 1 : 0,
@@ -124,7 +163,7 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["domains", appId] });
+      queryClient.invalidateQueries({ queryKey: ["domains", resolvedAppId] });
       setShowAddDomainModal(false);
     },
   });
@@ -138,7 +177,7 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["domains", appId] });
+      queryClient.invalidateQueries({ queryKey: ["domains", resolvedAppId] });
     },
   });
 
@@ -157,10 +196,10 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
         <p className="text-rose-600 font-medium mb-4">Application not found or failed to load.</p>
         <button
           type="button"
-          onClick={onBack}
+          onClick={handleBack}
           className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition"
         >
-          Back to Applications
+          Back to Project
         </button>
       </div>
     );
@@ -173,7 +212,7 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={onBack}
+            onClick={handleBack}
             className="p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition shadow-2xs"
             title="Back"
           >
@@ -186,8 +225,8 @@ export function AppDetailsPage({ appId, onBack }: AppDetailsPageProps) {
                 {app.appType}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5 font-mono">
-              ID: {app.id} • Created: {new Date(app.createdAt).toLocaleDateString()}
+            <p className="text-xs text-slate-500 mt-0.5">
+              <span className="font-mono text-slate-600">/{app.slug || app.id}</span> • Created {new Date(app.createdAt).toLocaleDateString()}
             </p>
           </div>
         </div>
@@ -369,6 +408,7 @@ function OverviewConfigTab({
   successMessage: string | null;
 }) {
   const [name, setName] = useState(app.name || "");
+  const [slug, setSlug] = useState(app.slug || "");
   const [repositoryUrl, setRepositoryUrl] = useState(app.repositoryUrl || "");
   const [branch, setBranch] = useState(app.branch || "main");
   const [dockerfilePath, setDockerfilePath] = useState(app.dockerfilePath || "Dockerfile");
@@ -388,6 +428,7 @@ function OverviewConfigTab({
     e.preventDefault();
     onUpdate({
       name,
+      slug,
       repositoryUrl,
       branch,
       dockerfilePath,
@@ -410,7 +451,7 @@ function OverviewConfigTab({
       <div className="border border-slate-200 rounded-xl p-5 bg-white space-y-4 shadow-xs">
         <h3 className="text-base font-bold text-slate-900">General Configuration</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Application Name</label>
             <input
@@ -419,6 +460,18 @@ function OverviewConfigTab({
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Friendly Slug</label>
+            <input
+              type="text"
+              required
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              placeholder="e.g. web-frontend"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono"
             />
           </div>
 

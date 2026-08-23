@@ -10,6 +10,7 @@ export const users = sqliteTable("users", {
 export const projects = sqliteTable("projects", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  slug: text("slug").notNull(),
   description: text("description"),
   createdAt: integer("created_at").notNull(),
 });
@@ -20,7 +21,8 @@ export const applications = sqliteTable("applications", {
     .notNull()
     .references(() => projects.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  appType: text("app_type").notNull(), // 'dockerfile' | 'compose' | 'image'
+  slug: text("slug").notNull(),
+  appType: text("app_type").notNull(),
   repositoryUrl: text("repository_url"),
   branch: text("branch").default("main"),
   dockerfilePath: text("dockerfile_path").default("Dockerfile"),
