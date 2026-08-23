@@ -1,45 +1,45 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import * as schema from "./schema.js";
-import { slugify } from "../utils/slug.js";
-import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
+import path from "node:path";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { slugify } from "../utils/slug.js";
+import * as schema from "./schema.js";
 
 function resolveDbPath(): string {
-  if (process.env.DATABASE_PATH) {
-    if (process.env.DATABASE_PATH !== ":memory:") {
-      const dir = path.dirname(process.env.DATABASE_PATH);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-    }
-    return process.env.DATABASE_PATH;
-  }
+	if (process.env.DATABASE_PATH) {
+		if (process.env.DATABASE_PATH !== ":memory:") {
+			const dir = path.dirname(process.env.DATABASE_PATH);
+			if (!fs.existsSync(dir)) {
+				fs.mkdirSync(dir, { recursive: true });
+			}
+		}
+		return process.env.DATABASE_PATH;
+	}
 
-  let dbDir = process.env.DATA_DIR;
-  if (dbDir) {
-    if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true });
-    }
-    return path.join(dbDir, "nimploy.db");
-  }
+	const dbDir = process.env.DATA_DIR;
+	if (dbDir) {
+		if (!fs.existsSync(dbDir)) {
+			fs.mkdirSync(dbDir, { recursive: true });
+		}
+		return path.join(dbDir, "nimploy.db");
+	}
 
-  // Attempt /etc/nimploy if writable, otherwise use local workspace .data or os.tmpdir
-  try {
-    fs.mkdirSync("/etc/nimploy", { recursive: true });
-    return "/etc/nimploy/nimploy.db";
-  } catch {
-    try {
-      const localDataDir = path.join(process.cwd(), ".data");
-      fs.mkdirSync(localDataDir, { recursive: true });
-      return path.join(localDataDir, "nimploy.db");
-    } catch {
-      const tmpDir = path.join(os.tmpdir(), "nimploy");
-      fs.mkdirSync(tmpDir, { recursive: true });
-      return path.join(tmpDir, "nimploy.db");
-    }
-  }
+	// Attempt /etc/nimploy if writable, otherwise use local workspace .data or os.tmpdir
+	try {
+		fs.mkdirSync("/etc/nimploy", { recursive: true });
+		return "/etc/nimploy/nimploy.db";
+	} catch {
+		try {
+			const localDataDir = path.join(process.cwd(), ".data");
+			fs.mkdirSync(localDataDir, { recursive: true });
+			return path.join(localDataDir, "nimploy.db");
+		} catch {
+			const tmpDir = path.join(os.tmpdir(), "nimploy");
+			fs.mkdirSync(tmpDir, { recursive: true });
+			return path.join(tmpDir, "nimploy.db");
+		}
+	}
 }
 
 const dbPath = resolveDbPath();
@@ -109,28 +109,40 @@ sqlite.exec(`
 `);
 
 try {
-  const projectCols = sqlite.pragma("table_info(projects)") as { name: string }[];
-  if (!projectCols.some((c) => c.name === "slug")) {
-    sqlite.exec("ALTER TABLE projects ADD COLUMN slug TEXT;");
-    const projs = sqlite.prepare("SELECT id, name FROM projects").all() as { id: string; name: string }[];
-    for (const p of projs) {
-      const s = slugify(p.name) || p.id;
-      sqlite.prepare("UPDATE projects SET slug = ? WHERE id = ?").run(s, p.id);
-    }
-  }
+	const projectCols = sqlite.pragma("table_info(projects)") as {
+		name: string;
+	}[];
+	if (!projectCols.some((c) => c.name === "slug")) {
+		sqlite.exec("ALTER TABLE projects ADD COLUMN slug TEXT;");
+		const projs = sqlite.prepare("SELECT id, name FROM projects").all() as {
+			id: string;
+			name: string;
+		}[];
+		for (const p of projs) {
+			const s = slugify(p.name) || p.id;
+			sqlite.prepare("UPDATE projects SET slug = ? WHERE id = ?").run(s, p.id);
+		}
+	}
 } catch {}
 
 try {
-  const appCols = sqlite.pragma("table_info(applications)") as { name: string }[];
-  if (!appCols.some((c) => c.name === "slug")) {
-    sqlite.exec("ALTER TABLE applications ADD COLUMN slug TEXT;");
-    const apps = sqlite.prepare("SELECT id, name FROM applications").all() as { id: string; name: string }[];
-    for (const a of apps) {
-      const s = slugify(a.name) || a.id;
-      sqlite.prepare("UPDATE applications SET slug = ? WHERE id = ?").run(s, a.id);
-    }
-  }
+	const appCols = sqlite.pragma("table_info(applications)") as {
+		name: string;
+	}[];
+	if (!appCols.some((c) => c.name === "slug")) {
+		sqlite.exec("ALTER TABLE applications ADD COLUMN slug TEXT;");
+		const apps = sqlite.prepare("SELECT id, name FROM applications").all() as {
+			id: string;
+			name: string;
+		}[];
+		for (const a of apps) {
+			const s = slugify(a.name) || a.id;
+			sqlite
+				.prepare("UPDATE applications SET slug = ? WHERE id = ?")
+				.run(s, a.id);
+		}
+	}
 } catch {}
 
 export const db = drizzle(sqlite, { schema });
-export { sqlite, schema };
+export { schema, sqlite };

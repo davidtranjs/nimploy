@@ -1,9 +1,5 @@
 packages:
-  - "apps/api"
-  - "apps/dokploy"
-  - "apps/lite"
-  - "apps/schedules"
-  - "packages/server"
+  - "apps/*"
 
 # Supply-chain hardening: refuse package versions younger than N days,
 # so newly-published malicious versions get caught/yanked before we install them.

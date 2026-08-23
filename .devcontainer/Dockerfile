@@ -1,5 +1,5 @@
 # Dockerfile for DevContainer
-FROM node:24.4.0-bullseye-slim
+FROM node:22-bullseye-slim
 
 # Install essential packages
 RUN apt-get update && apt-get install -y \
@@ -15,7 +15,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@10.22.0 --activate
 
 # Create workspace directory
-WORKDIR /workspaces/dokploy
+WORKDIR /workspaces/nimploy
 
 # Set up user permissions
 USER node

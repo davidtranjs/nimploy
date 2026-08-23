@@ -10,14 +10,11 @@
 		"includes": [
 			"**",
 			"!**/.docker",
-			"!**/.next/**",
 			"!**/dist",
-			"!**/drizzle/**",
-			"!node_modules/**",
-			"!packages/server/package.json"
+			"!**/drizzle",
+			"!node_modules"
 		],
-		"maxSize": 2097152,
-		"experimentalScannerIgnores": [".next", "node_modules", ".docker", "dist"]
+		"maxSize": 2097152
 	},
 	"css": { "parser": { "tailwindDirectives": true } },
 	"assist": { "actions": { "source": { "organizeImports": "on" } } },
@@ -63,7 +60,8 @@
 				"useKeyWithClickEvents": "off",
 				"useAriaPropsForRole": "off",
 				"useAriaPropsSupportedByRole": "off",
-				"noStaticElementInteractions": "off"
+				"noStaticElementInteractions": "off",
+				"noLabelWithoutControl": "off"
 			}
 		}
 	}

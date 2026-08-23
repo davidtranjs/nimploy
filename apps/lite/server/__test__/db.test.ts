@@ -1,20 +1,20 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import * as schema from "../src/db/schema";
 import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { beforeEach, describe, expect, it } from "vitest";
+import * as schema from "../src/db/schema";
 
 describe("SQLite Database & Schema", () => {
-  let sqlite: Database.Database;
-  let db: ReturnType<typeof drizzle>;
+	let sqlite: Database.Database;
+	let db: ReturnType<typeof drizzle>;
 
-  beforeEach(() => {
-    sqlite = new Database(":memory:");
-    sqlite.pragma("journal_mode = WAL");
-    db = drizzle(sqlite, { schema });
+	beforeEach(() => {
+		sqlite = new Database(":memory:");
+		sqlite.pragma("journal_mode = WAL");
+		db = drizzle(sqlite, { schema });
 
-    // Initialize tables
-    sqlite.exec(`
+		// Initialize tables
+		sqlite.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         username TEXT NOT NULL UNIQUE,
@@ -68,46 +68,46 @@ describe("SQLite Database & Schema", () => {
         created_at INTEGER NOT NULL
       );
     `);
-  });
+	});
 
-  it("should create and retrieve a project with applications and domains", async () => {
-    const projectId = "proj-1";
-    await db.insert(schema.projects).values({
-      id: projectId,
-      name: "Demo Project",
-      slug: "demo-project",
-      description: "Testing SQLite Schema",
-      createdAt: Date.now(),
-    });
+	it("should create and retrieve a project with applications and domains", async () => {
+		const projectId = "proj-1";
+		await db.insert(schema.projects).values({
+			id: projectId,
+			name: "Demo Project",
+			slug: "demo-project",
+			description: "Testing SQLite Schema",
+			createdAt: Date.now(),
+		});
 
-    const appId = "app-1";
-    await db.insert(schema.applications).values({
-      id: appId,
-      projectId,
-      name: "Web API",
-      slug: "web-api",
-      appType: "dockerfile",
-      repositoryUrl: "https://github.com/example/api.git",
-      branch: "main",
-      createdAt: Date.now(),
-    });
+		const appId = "app-1";
+		await db.insert(schema.applications).values({
+			id: appId,
+			projectId,
+			name: "Web API",
+			slug: "web-api",
+			appType: "dockerfile",
+			repositoryUrl: "https://github.com/example/api.git",
+			branch: "main",
+			createdAt: Date.now(),
+		});
 
-    await db.insert(schema.domains).values({
-      id: "dom-1",
-      applicationId: appId,
-      host: "api.example.com",
-      containerPort: 3000,
-      httpsEnabled: 1,
-      createdAt: Date.now(),
-    });
+		await db.insert(schema.domains).values({
+			id: "dom-1",
+			applicationId: appId,
+			host: "api.example.com",
+			containerPort: 3000,
+			httpsEnabled: 1,
+			createdAt: Date.now(),
+		});
 
-    const [savedApp] = await db
-      .select()
-      .from(schema.applications)
-      .where(eq(schema.applications.id, appId));
+		const [savedApp] = await db
+			.select()
+			.from(schema.applications)
+			.where(eq(schema.applications.id, appId));
 
-    expect(savedApp).toBeDefined();
-    expect(savedApp.name).toBe("Web API");
-    expect(savedApp.appType).toBe("dockerfile");
-  });
+		expect(savedApp).toBeDefined();
+		expect(savedApp.name).toBe("Web API");
+		expect(savedApp.appType).toBe("dockerfile");
+	});
 });
