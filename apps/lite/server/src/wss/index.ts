@@ -16,6 +16,7 @@ export function setupWebSocket(server: http.Server): WebSocketServer {
     const appId = url.searchParams.get("appId") || "global";
     const type = url.searchParams.get("type") || "deployment";
     const tail = Number(url.searchParams.get("tail") || 100);
+    const containerParam = url.searchParams.get("containerName");
 
     if (type === "container" && appId !== "global") {
       let proc: any = null;
@@ -35,7 +36,7 @@ export function setupWebSocket(server: http.Server): WebSocketServer {
             return;
           }
 
-          const containerName = getContainerName(app);
+          const containerName = containerParam || getContainerName(app);
           proc = streamContainerLogsProcess(containerName, tail);
 
           proc.stdout?.on("data", (chunk: Buffer) => {

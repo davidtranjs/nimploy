@@ -72,12 +72,6 @@ function DashboardRoot() {
           <ProjectsPage />
         )}
       </main>
-
-      {/* Lightweight Footer */}
-      <footer className="border-t border-slate-200 bg-white/50 px-6 py-4 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between max-w-6xl w-full mx-auto gap-2">
-        <span>Nimploy Lite • SQLite & Caddy Native Architecture</span>
-        <span className="font-medium text-slate-600">Target Idle RAM: &lt; 70MB</span>
-      </footer>
     </div>
   );
 }

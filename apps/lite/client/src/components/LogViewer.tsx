@@ -4,6 +4,7 @@ import { Terminal, Play, Pause, Trash2, Copy, Download, X } from "lucide-react";
 interface LogViewerProps {
   appId: string;
   deploymentId?: string;
+  containerName?: string;
   type?: "container" | "deployment";
   title?: string;
   onClose?: () => void;
@@ -12,6 +13,7 @@ interface LogViewerProps {
 export function LogViewer({
   appId,
   deploymentId,
+  containerName,
   type = deploymentId ? "deployment" : "container",
   title,
   onClose,
@@ -26,7 +28,9 @@ export function LogViewer({
   const displayTitle =
     title ||
     (type === "container"
-      ? "Realtime Container Logs"
+      ? containerName
+        ? `Container Logs (${containerName})`
+        : "Realtime Container Logs"
       : deploymentId
       ? `Deployment Logs (${deploymentId})`
       : "Deployment Logs");
@@ -36,7 +40,10 @@ export function LogViewer({
     async function fetchInitialLogs() {
       try {
         if (type === "container") {
-          const res = await fetch(`/api/applications/${encodeURIComponent(appId)}/container-logs`);
+          const url = `/api/applications/${encodeURIComponent(appId)}/container-logs${
+            containerName ? `?containerName=${encodeURIComponent(containerName)}` : ""
+          }`;
+          const res = await fetch(url);
           if (res.ok) {
             const text = await res.text();
             if (isMounted && text.trim().length > 0) {
@@ -61,7 +68,7 @@ export function LogViewer({
     return () => {
       isMounted = false;
     };
-  }, [appId, deploymentId, type]);
+  }, [appId, deploymentId, containerName, type]);
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -72,6 +79,9 @@ export function LogViewer({
     });
     if (deploymentId) {
       queryParams.set("deploymentId", deploymentId);
+    }
+    if (containerName) {
+      queryParams.set("containerName", containerName);
     }
     const wsUrl = `${protocol}//${host}/ws?${queryParams.toString()}`;
 

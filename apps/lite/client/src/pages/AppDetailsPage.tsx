@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Boxes,
   CheckCircle,
   ExternalLink,
   Globe,
@@ -45,6 +46,7 @@ export function AppDetailsPage({
     parseAsStringEnum([
       "overview",
       "deployments",
+      "services",
       "logs",
       "domains",
     ]).withDefault("overview"),
@@ -53,6 +55,14 @@ export function AppDetailsPage({
     "deploymentId",
     parseAsString,
   );
+  const [selectedContainer, setSelectedContainer] = useState<{
+    id: string;
+    name: string;
+    image: string;
+    state: string;
+    status: string;
+    createdAt: string;
+  } | null>(null);
   const [showAddDomainModal, setShowAddDomainModal] = useState(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(
     null,
@@ -89,6 +99,27 @@ export function AppDetailsPage({
       );
       if (!res.ok) throw new Error("Failed to fetch deployments");
       return res.json();
+    },
+    refetchInterval: 3000,
+  });
+
+  const { data: containers, isLoading: containersLoading } = useQuery({
+    queryKey: ["containers", resolvedAppId],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/applications/${encodeURIComponent(resolvedAppId)}/containers`,
+      );
+      if (!res.ok) throw new Error("Failed to fetch containers");
+      return res.json() as Promise<
+        Array<{
+          id: string;
+          name: string;
+          image: string;
+          state: string;
+          status: string;
+          createdAt: string;
+        }>
+      >;
     },
     refetchInterval: 3000,
   });
@@ -345,15 +376,15 @@ export function AppDetailsPage({
 
         <button
           type="button"
-          onClick={() => setActiveTab("logs")}
+          onClick={() => setActiveTab("services")}
           className={`pb-3 font-medium transition flex items-center gap-2 border-b-2 ${
-            activeTab === "logs"
+            activeTab === "services" || activeTab === "logs"
               ? "border-emerald-600 text-emerald-700 font-semibold"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
-          <Terminal className="w-4 h-4" />
-          <span>Live Logs</span>
+          <Boxes className="w-4 h-4" />
+          <span>Services</span>
         </button>
 
         <button
@@ -406,14 +437,15 @@ export function AppDetailsPage({
         />
       )}
 
-      {activeTab === "logs" && (
-        <div className="space-y-4">
-          <LogViewer
-            appId={app.id}
-            type="container"
-            title="Realtime Container Logs"
-          />
-        </div>
+      {(activeTab === "services" || activeTab === "logs") && (
+        <ContainersTab
+          appId={app.id}
+          containers={containers || []}
+          isLoading={containersLoading}
+          selectedContainer={selectedContainer || undefined}
+          onSelectContainer={(cont) => setSelectedContainer(cont)}
+          onCloseLogs={() => setSelectedContainer(null)}
+        />
       )}
 
       {activeTab === "domains" && (
@@ -818,6 +850,156 @@ function DeploymentsTab({
   );
 }
 
+function ContainersTab({
+  appId,
+  containers,
+  isLoading,
+  selectedContainer,
+  onSelectContainer,
+  onCloseLogs,
+}: {
+  appId: string;
+  containers: Array<{
+    id: string;
+    name: string;
+    image: string;
+    state: string;
+    status: string;
+    createdAt: string;
+  }>;
+  isLoading: boolean;
+  selectedContainer?: {
+    id: string;
+    name: string;
+    image: string;
+    state: string;
+    status: string;
+    createdAt: string;
+  };
+  onSelectContainer: (container: any) => void;
+  onCloseLogs: () => void;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-slate-500 gap-2">
+        <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+        <span>Loading containers...</span>
+      </div>
+    );
+  }
+
+  if (containers.length === 0) {
+    return (
+      <div className="border border-dashed border-slate-300 bg-white/60 rounded-xl p-12 text-center text-slate-500">
+        <Boxes className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
+        <p className="font-semibold text-slate-700">
+          No running containers found
+        </p>
+        <span className="text-xs text-slate-500">
+          Click &quot;Deploy Now&quot; above to start and inspect running containers.
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600">
+            <tr>
+              <th className="py-3 px-4">State</th>
+              <th className="py-3 px-4">Container ID</th>
+              <th className="py-3 px-4">Name</th>
+              <th className="py-3 px-4">Image</th>
+              <th className="py-3 px-4">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {containers.map((container) => {
+              const isRunning = container.state === "running";
+              const isExited =
+                container.state === "exited" || container.state === "dead";
+
+              return (
+                <tr
+                  key={container.id}
+                  onClick={() => onSelectContainer(container)}
+                  className="hover:bg-slate-50/80 cursor-pointer transition"
+                >
+                  <td className="py-3 px-4">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        isRunning
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : isExited
+                            ? "bg-rose-50 text-rose-700 border border-rose-200"
+                            : "bg-slate-100 text-slate-600 border border-slate-200"
+                      }`}
+                    >
+                      {isRunning && (
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                      )}
+                      {isExited && (
+                        <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                      )}
+                      <span className="capitalize">{container.state}</span>
+                    </span>
+                  </td>
+
+                  <td className="py-3 px-4 font-mono text-xs text-slate-700 font-medium">
+                    {container.id}
+                  </td>
+
+                  <td className="py-3 px-4 font-mono text-xs text-slate-700">
+                    {container.name}
+                  </td>
+
+                  <td className="py-3 px-4 font-mono text-xs text-slate-500">
+                    {container.image}
+                  </td>
+
+                  <td className="py-3 px-4 text-xs text-slate-500">
+                    {container.status}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <Dialog
+        open={Boolean(selectedContainer)}
+        onOpenChange={(open) => {
+          if (!open) {
+            onCloseLogs();
+          }
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="max-w-4xl w-full h-[80vh] p-0 border-0 bg-transparent shadow-2xl overflow-hidden"
+        >
+          <DialogTitle className="sr-only">Container Logs</DialogTitle>
+          <DialogDescription className="sr-only">
+            Output and logs for container {selectedContainer?.name}
+          </DialogDescription>
+          {selectedContainer && (
+            <LogViewer
+              appId={appId}
+              containerName={selectedContainer.name}
+              type="container"
+              title={`Container Logs (${selectedContainer.name})`}
+              onClose={onCloseLogs}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 function DomainsTab({
   domains,
   isLoading,
@@ -836,10 +1018,6 @@ function DomainsTab({
           <h3 className="text-base font-bold text-slate-900">
             Configured Domains
           </h3>
-          <p className="text-xs text-slate-500">
-            Caddy reverse proxies incoming traffic on these domains to your
-            container.
-          </p>
         </div>
         <button
           type="button"

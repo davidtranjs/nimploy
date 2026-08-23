@@ -116,3 +116,43 @@ export async function getContainerLogs(containerName: string, tail: number = 100
   });
 }
 
+export interface AppContainerInfo {
+  id: string;
+  name: string;
+  image: string;
+  state: string;
+  status: string;
+  createdAt: string;
+}
+
+export async function getAppContainers(
+  containerFilter: string
+): Promise<AppContainerInfo[]> {
+  return new Promise((resolve) => {
+    const proc = spawn("docker", [
+      "ps",
+      "-a",
+      "--filter",
+      `name=${containerFilter}`,
+      "--format",
+      '{"id":"{{.ID}}","name":"{{.Names}}","image":"{{.Image}}","state":"{{.State}}","status":"{{.Status}}","createdAt":"{{.CreatedAt}}"}',
+    ]);
+    let output = "";
+    proc.stdout?.on("data", (d) => {
+      output += d.toString();
+    });
+    proc.on("close", () => {
+      const lines = output.trim().split("\n").filter(Boolean);
+      const containers: AppContainerInfo[] = [];
+      for (const line of lines) {
+        try {
+          containers.push(JSON.parse(line));
+        } catch {}
+      }
+      resolve(containers);
+    });
+    proc.on("error", () => {
+      resolve([]);
+    });
+  });
+}
