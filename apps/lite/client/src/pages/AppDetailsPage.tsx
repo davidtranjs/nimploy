@@ -649,7 +649,6 @@ function DeploymentsTab({
               <th className="py-3 px-4">Deployment ID</th>
               <th className="py-3 px-4">Commit</th>
               <th className="py-3 px-4">Started At</th>
-              <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -659,7 +658,11 @@ function DeploymentsTab({
               const isRunning = dep.status === "RUNNING";
 
               return (
-                <tr key={dep.id} className="hover:bg-slate-50/70 transition">
+                <tr
+                  key={dep.id}
+                  onClick={() => onSelectDeployment(dep.id)}
+                  className="hover:bg-slate-50/80 cursor-pointer transition"
+                >
                   <td className="py-3 px-4">
                     <span
                       className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
@@ -679,7 +682,7 @@ function DeploymentsTab({
                     </span>
                   </td>
 
-                  <td className="py-3 px-4 font-mono text-xs text-slate-700">{dep.id}</td>
+                  <td className="py-3 px-4 font-mono text-xs text-slate-700 font-medium">{dep.id}</td>
 
                   <td className="py-3 px-4 font-mono text-xs text-slate-500">
                     {dep.commitHash ? dep.commitHash.slice(0, 7) : "—"}
@@ -687,17 +690,6 @@ function DeploymentsTab({
 
                   <td className="py-3 px-4 text-xs text-slate-500">
                     {dep.startedAt ? new Date(dep.startedAt).toLocaleString() : "—"}
-                  </td>
-
-                  <td className="py-3 px-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => onSelectDeployment(dep.id)}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg transition"
-                    >
-                      <Terminal className="w-3.5 h-3.5" />
-                      <span>View Logs</span>
-                    </button>
                   </td>
                 </tr>
               );
