@@ -23,7 +23,7 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
-dotenv.config({ path: path.resolve(process.cwd(), "apps/lite/.env") });
+dotenv.config({ path: path.resolve(process.cwd(), "apps/server/.env") });
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 if (process.env.NODE_ENV !== "test") {
@@ -59,8 +59,9 @@ app.get("/api/health", (c) =>
 // Resolve static SPA assets directory
 const possibleStaticDirs = [
 	path.join(process.cwd(), "client/dist"),
-	path.join(process.cwd(), "apps/lite/client/dist"),
+	path.join(process.cwd(), "apps/client/dist"),
 	path.resolve(__dirname, "../../client/dist"),
+	path.resolve(__dirname, "../../../client/dist"),
 	path.resolve(__dirname, "../client/dist"),
 ];
 const STATIC_DIR = possibleStaticDirs.find((dir) => fs.existsSync(dir));

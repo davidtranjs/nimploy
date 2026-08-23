@@ -1,11 +1,11 @@
 version: "3.8"
 
 services:
-  nimploy-lite:
+  nimploy:
     build:
       context: .
-      dockerfile: Dockerfile.lite
-    container_name: nimploy-lite
+      dockerfile: Dockerfile
+    container_name: nimploy
     restart: unless-stopped
     ports:
       - "80:80"
