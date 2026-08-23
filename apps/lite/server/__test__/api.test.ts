@@ -255,6 +255,27 @@ describe("Nimploy Lite HTTP API", () => {
       const fetched = await getBySlug.json();
       expect(fetched.id).toBe(app1.id);
     });
+
+    it("should return container logs text or error for an application", async () => {
+      const createRes = await app.request("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: testProjectId,
+          name: "Logs App",
+          appType: "dockerfile",
+        }),
+      });
+      const created = await createRes.json();
+
+      const logsRes = await app.request(`/api/applications/${created.id}/container-logs`);
+      expect(logsRes.status).toBe(200);
+      const text = await logsRes.text();
+      expect(typeof text).toBe("string");
+
+      const notFoundRes = await app.request("/api/applications/non-existent/container-logs");
+      expect(notFoundRes.status).toBe(404);
+    });
   });
 
   describe("Deployments Route", () => {
@@ -495,6 +516,24 @@ describe("Nimploy Lite HTTP API", () => {
       expect(receivedApp[0].data).toBe("Build log chunk 1");
       expect(receivedGlobal).toHaveLength(1);
       expect(receivedGlobal[0].data).toBe("Build log chunk 1");
+    });
+
+    it("should handle container log stream connection gracefully", async () => {
+      const wsContainer = new WebSocket(`ws://127.0.0.1:${port}/ws?appId=non-existent-app&type=container`);
+      const receivedMessages: any[] = [];
+
+      await new Promise<void>((resolve, reject) => {
+        wsContainer.on("message", (data) => {
+          receivedMessages.push(JSON.parse(data.toString()));
+          wsContainer.close();
+          resolve();
+        });
+        wsContainer.on("error", reject);
+      });
+
+      expect(receivedMessages.length).toBeGreaterThanOrEqual(1);
+      expect(receivedMessages[0].type).toBe("container-log");
+      expect(receivedMessages[0].data).toContain("Application not found");
     });
   });
 

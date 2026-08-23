@@ -6,6 +6,8 @@ import { ProjectDetailsPage } from "./pages/ProjectDetailsPage";
 import { AppDetailsPage } from "./pages/AppDetailsPage";
 import { Route, parseRoute, navigateTo } from "./router";
 
+import { NuqsAdapter } from "nuqs/adapters/react";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -17,9 +19,11 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <DashboardRoot />
-    </QueryClientProvider>
+    <NuqsAdapter>
+      <QueryClientProvider client={queryClient}>
+        <DashboardRoot />
+      </QueryClientProvider>
+    </NuqsAdapter>
   );
 }
 

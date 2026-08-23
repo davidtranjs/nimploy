@@ -18,6 +18,14 @@ import {
 import { LogViewer } from "../components/LogViewer";
 import { Breadcrumb } from "../components/Breadcrumb";
 import { navigateTo, replaceTo } from "../router";
+import { useQueryState, parseAsString, parseAsStringEnum } from "nuqs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../components/ui/dialog";
 
 interface AppDetailsPageProps {
   appId: string;
@@ -27,10 +35,19 @@ interface AppDetailsPageProps {
 
 export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps) {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"overview" | "deployments" | "logs" | "domains">("overview");
-  const [selectedDeploymentId, setSelectedDeploymentId] = useState<string | undefined>();
+  const [activeTab, setActiveTab] = useQueryState(
+    "tab",
+    parseAsStringEnum(["overview", "deployments", "logs", "domains"]).withDefault("overview")
+  );
+  const [selectedDeploymentId, setSelectedDeploymentId] = useQueryState("deploymentId", parseAsString);
   const [showAddDomainModal, setShowAddDomainModal] = useState(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (selectedDeploymentId && activeTab !== "deployments") {
+      setActiveTab("deployments");
+    }
+  }, [selectedDeploymentId, activeTab, setActiveTab]);
 
   // Queries
   const { data: app, isLoading: appLoading, error: appError } = useQuery({
@@ -78,7 +95,7 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
     onSuccess: (newDep) => {
       queryClient.invalidateQueries({ queryKey: ["deployments", resolvedAppId] });
       setSelectedDeploymentId(newDep.id);
-      setActiveTab("logs");
+      setActiveTab("deployments");
     },
   });
 
@@ -343,34 +360,18 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
 
       {activeTab === "deployments" && (
         <DeploymentsTab
+          appId={app.id}
           deployments={deployments || []}
           isLoading={deploymentsLoading}
-          onViewLogs={(depId) => {
-            setSelectedDeploymentId(depId);
-            setActiveTab("logs");
-          }}
+          selectedDeploymentId={selectedDeploymentId || undefined}
+          onSelectDeployment={(depId) => setSelectedDeploymentId(depId)}
+          onCloseLogs={() => setSelectedDeploymentId(null)}
         />
       )}
 
       {activeTab === "logs" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">
-              {selectedDeploymentId
-                ? `Showing logs for deployment ${selectedDeploymentId}`
-                : "Streaming live logs for this application"}
-            </span>
-            {selectedDeploymentId && (
-              <button
-                type="button"
-                onClick={() => setSelectedDeploymentId(undefined)}
-                className="text-xs font-semibold text-emerald-600 hover:underline"
-              >
-                Switch to live stream
-              </button>
-            )}
-          </div>
-          <LogViewer appId={app.id} deploymentId={selectedDeploymentId} />
+          <LogViewer appId={app.id} type="container" title="Realtime Container Logs" />
         </div>
       )}
 
@@ -605,13 +606,19 @@ function OverviewConfigTab({
 }
 
 function DeploymentsTab({
+  appId,
   deployments,
   isLoading,
-  onViewLogs,
+  selectedDeploymentId,
+  onSelectDeployment,
+  onCloseLogs,
 }: {
+  appId: string;
   deployments: any[];
   isLoading: boolean;
-  onViewLogs: (id: string) => void;
+  selectedDeploymentId?: string;
+  onSelectDeployment: (id: string) => void;
+  onCloseLogs: () => void;
 }) {
   if (isLoading) {
     return (
@@ -633,69 +640,99 @@ function DeploymentsTab({
   }
 
   return (
-    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
-      <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600">
-          <tr>
-            <th className="py-3 px-4">Status</th>
-            <th className="py-3 px-4">Deployment ID</th>
-            <th className="py-3 px-4">Commit</th>
-            <th className="py-3 px-4">Started At</th>
-            <th className="py-3 px-4 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {deployments.map((dep) => {
-            const isCompleted = dep.status === "COMPLETED";
-            const isFailed = dep.status === "FAILED" || dep.status === "INTERRUPTED";
-            const isRunning = dep.status === "RUNNING";
+    <div className="space-y-4">
+      <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600">
+            <tr>
+              <th className="py-3 px-4">Status</th>
+              <th className="py-3 px-4">Deployment ID</th>
+              <th className="py-3 px-4">Commit</th>
+              <th className="py-3 px-4">Started At</th>
+              <th className="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {deployments.map((dep) => {
+              const isCompleted = dep.status === "COMPLETED";
+              const isFailed = dep.status === "FAILED" || dep.status === "INTERRUPTED";
+              const isRunning = dep.status === "RUNNING";
 
-            return (
-              <tr key={dep.id} className="hover:bg-slate-50/70 transition">
-                <td className="py-3 px-4">
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                      isCompleted
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                        : isFailed
-                        ? "bg-rose-50 text-rose-700 border border-rose-200"
-                        : isRunning
-                        ? "bg-blue-50 text-blue-700 border border-blue-200 animate-pulse"
-                        : "bg-slate-100 text-slate-600 border border-slate-200"
-                    }`}
-                  >
-                    {isCompleted && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
-                    {isFailed && <XCircle className="w-3.5 h-3.5 text-rose-600" />}
-                    {isRunning && <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />}
-                    <span>{dep.status}</span>
-                  </span>
-                </td>
+              return (
+                <tr key={dep.id} className="hover:bg-slate-50/70 transition">
+                  <td className="py-3 px-4">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        isCompleted
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : isFailed
+                          ? "bg-rose-50 text-rose-700 border border-rose-200"
+                          : isRunning
+                          ? "bg-blue-50 text-blue-700 border border-blue-200 animate-pulse"
+                          : "bg-slate-100 text-slate-600 border border-slate-200"
+                      }`}
+                    >
+                      {isCompleted && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
+                      {isFailed && <XCircle className="w-3.5 h-3.5 text-rose-600" />}
+                      {isRunning && <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />}
+                      <span>{dep.status}</span>
+                    </span>
+                  </td>
 
-                <td className="py-3 px-4 font-mono text-xs text-slate-700">{dep.id}</td>
+                  <td className="py-3 px-4 font-mono text-xs text-slate-700">{dep.id}</td>
 
-                <td className="py-3 px-4 font-mono text-xs text-slate-500">
-                  {dep.commitHash ? dep.commitHash.slice(0, 7) : "—"}
-                </td>
+                  <td className="py-3 px-4 font-mono text-xs text-slate-500">
+                    {dep.commitHash ? dep.commitHash.slice(0, 7) : "—"}
+                  </td>
 
-                <td className="py-3 px-4 text-xs text-slate-500">
-                  {dep.startedAt ? new Date(dep.startedAt).toLocaleString() : "—"}
-                </td>
+                  <td className="py-3 px-4 text-xs text-slate-500">
+                    {dep.startedAt ? new Date(dep.startedAt).toLocaleString() : "—"}
+                  </td>
 
-                <td className="py-3 px-4 text-right">
-                  <button
-                    type="button"
-                    onClick={() => onViewLogs(dep.id)}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg transition"
-                  >
-                    <Terminal className="w-3.5 h-3.5" />
-                    <span>View Logs</span>
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                  <td className="py-3 px-4 text-right">
+                    <button
+                      type="button"
+                      onClick={() => onSelectDeployment(dep.id)}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg transition"
+                    >
+                      <Terminal className="w-3.5 h-3.5" />
+                      <span>View Logs</span>
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <Dialog
+        open={Boolean(selectedDeploymentId)}
+        onOpenChange={(open) => {
+          if (!open) {
+            onCloseLogs();
+          }
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="max-w-4xl w-full h-[80vh] p-0 border-0 bg-transparent shadow-2xl overflow-hidden"
+        >
+          <DialogTitle className="sr-only">Deployment Logs</DialogTitle>
+          <DialogDescription className="sr-only">
+            Output and logs for deployment {selectedDeploymentId}
+          </DialogDescription>
+          {selectedDeploymentId && (
+            <LogViewer
+              appId={appId}
+              deploymentId={selectedDeploymentId}
+              type="deployment"
+              title={`Deployment Logs (${selectedDeploymentId})`}
+              onClose={onCloseLogs}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -814,14 +851,12 @@ function AddDomainModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 className="text-base font-bold text-slate-900">Add Custom Domain</h3>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
-            <XCircle className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-md w-full p-6">
+        <DialogHeader>
+          <DialogTitle className="text-base font-bold text-slate-900">Add Custom Domain</DialogTitle>
+          <DialogDescription className="sr-only">Add custom domain and routing port</DialogDescription>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -880,7 +915,7 @@ function AddDomainModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

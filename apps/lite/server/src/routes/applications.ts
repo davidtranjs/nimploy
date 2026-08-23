@@ -4,6 +4,8 @@ import { eq, or, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { jobQueue } from "../queue/jobQueue.js";
 import { generateUniqueAppSlug } from "../utils/slug.js";
+import { getContainerName } from "../services/deploymentService.js";
+import { getContainerLogs } from "../services/dockerRunner.js";
 import path from "node:path";
 import fs from "node:fs";
 
@@ -58,6 +60,22 @@ export const applicationRouter = new Hono()
       return c.json({ error: "Application not found" }, 404);
     }
     return c.json(appItem);
+  })
+  .get("/:id/container-logs", async (c) => {
+    const id = c.req.param("id");
+    const tail = Number(c.req.query("tail") || 100);
+    const [appItem] = await db
+      .select()
+      .from(schema.applications)
+      .where(or(eq(schema.applications.id, id), eq(schema.applications.slug, id)));
+
+    if (!appItem) {
+      return c.json({ error: "Application not found" }, 404);
+    }
+
+    const containerName = getContainerName(appItem);
+    const logs = await getContainerLogs(containerName, tail);
+    return c.text(logs);
   })
   .post("/", async (c) => {
     const body = await c.req.json().catch(() => ({}));

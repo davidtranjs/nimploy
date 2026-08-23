@@ -88,3 +88,31 @@ export async function runDockerBuild(imageTag: string, dockerfilePath: string, o
     options
   );
 }
+
+export function streamContainerLogsProcess(containerName: string, tail: number = 100) {
+  return spawn("docker", ["logs", "-f", "--tail", String(tail), containerName]);
+}
+
+export async function getContainerLogs(containerName: string, tail: number = 100): Promise<string> {
+  return new Promise((resolve) => {
+    const proc = spawn("docker", ["logs", "--tail", String(tail), containerName]);
+    let output = "";
+    proc.stdout?.on("data", (d) => {
+      output += d.toString();
+    });
+    proc.stderr?.on("data", (d) => {
+      output += d.toString();
+    });
+    proc.on("close", (code) => {
+      if (code !== 0 && !output) {
+        resolve(`Container "${containerName}" is not running or has not been deployed yet.\n`);
+      } else {
+        resolve(output);
+      }
+    });
+    proc.on("error", (err) => {
+      resolve(`Error fetching container logs: ${err.message}\n`);
+    });
+  });
+}
+
