@@ -1,31 +1,32 @@
-import React, { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Play,
-  Terminal,
-  Globe,
-  Settings,
-  History,
-  Trash2,
-  ExternalLink,
-  Plus,
   CheckCircle,
-  XCircle,
+  ExternalLink,
+  Globe,
+  History,
   Loader2,
+  Play,
+  Plus,
   RefreshCw,
   Save,
+  Settings,
+  Terminal,
+  Trash2,
+  XCircle,
 } from "lucide-react";
-import { LogViewer } from "../components/LogViewer";
+import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { Breadcrumb } from "../components/Breadcrumb";
-import { navigateTo, replaceTo } from "../router";
-import { useQueryState, parseAsString, parseAsStringEnum } from "nuqs";
+import { LogViewer } from "../components/LogViewer";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "../components/ui/dialog";
+import { navigateTo, replaceTo } from "../router";
 
 interface AppDetailsPageProps {
   appId: string;
@@ -33,15 +34,29 @@ interface AppDetailsPageProps {
   onBack?: () => void;
 }
 
-export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps) {
+export function AppDetailsPage({
+  appId,
+  projectId,
+  onBack,
+}: AppDetailsPageProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useQueryState(
     "tab",
-    parseAsStringEnum(["overview", "deployments", "logs", "domains"]).withDefault("overview")
+    parseAsStringEnum([
+      "overview",
+      "deployments",
+      "logs",
+      "domains",
+    ]).withDefault("overview"),
   );
-  const [selectedDeploymentId, setSelectedDeploymentId] = useQueryState("deploymentId", parseAsString);
+  const [selectedDeploymentId, setSelectedDeploymentId] = useQueryState(
+    "deploymentId",
+    parseAsString,
+  );
   const [showAddDomainModal, setShowAddDomainModal] = useState(false);
-  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     if (selectedDeploymentId && activeTab !== "deployments") {
@@ -50,7 +65,11 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
   }, [selectedDeploymentId, activeTab, setActiveTab]);
 
   // Queries
-  const { data: app, isLoading: appLoading, error: appError } = useQuery({
+  const {
+    data: app,
+    isLoading: appLoading,
+    error: appError,
+  } = useQuery({
     queryKey: ["application", appId, projectId],
     queryFn: async () => {
       const url = `/api/applications/${encodeURIComponent(appId)}${projectId ? `?projectId=${encodeURIComponent(projectId)}` : ""}`;
@@ -65,7 +84,9 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
   const { data: deployments, isLoading: deploymentsLoading } = useQuery({
     queryKey: ["deployments", resolvedAppId],
     queryFn: async () => {
-      const res = await fetch(`/api/deployments?applicationId=${resolvedAppId}`);
+      const res = await fetch(
+        `/api/deployments?applicationId=${resolvedAppId}`,
+      );
       if (!res.ok) throw new Error("Failed to fetch deployments");
       return res.json();
     },
@@ -93,7 +114,9 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
       return res.json();
     },
     onSuccess: (newDep) => {
-      queryClient.invalidateQueries({ queryKey: ["deployments", resolvedAppId] });
+      queryClient.invalidateQueries({
+        queryKey: ["deployments", resolvedAppId],
+      });
       setSelectedDeploymentId(newDep.id);
       setActiveTab("deployments");
     },
@@ -129,7 +152,9 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
     queryKey: ["project", targetProjectId],
     queryFn: async () => {
       if (!targetProjectId) return null;
-      const res = await fetch(`/api/projects/${encodeURIComponent(targetProjectId)}`);
+      const res = await fetch(
+        `/api/projects/${encodeURIComponent(targetProjectId)}`,
+      );
       if (!res.ok) return null;
       return res.json();
     },
@@ -171,14 +196,20 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
       const targetProjectId = projectId || app?.projectId;
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       if (targetProjectId) {
-        queryClient.invalidateQueries({ queryKey: ["applications", targetProjectId] });
+        queryClient.invalidateQueries({
+          queryKey: ["applications", targetProjectId],
+        });
       }
       handleBack();
     },
   });
 
   const addDomainMutation = useMutation({
-    mutationFn: async (domainData: { host: string; containerPort: number; httpsEnabled: boolean }) => {
+    mutationFn: async (domainData: {
+      host: string;
+      containerPort: number;
+      httpsEnabled: boolean;
+    }) => {
       const res = await fetch("/api/domains", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -223,7 +254,9 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
   if (appError || !app) {
     return (
       <div className="py-12 text-center">
-        <p className="text-rose-600 font-medium mb-4">Application not found or failed to load.</p>
+        <p className="text-rose-600 font-medium mb-4">
+          Application not found or failed to load.
+        </p>
         <button
           type="button"
           onClick={handleBack}
@@ -242,7 +275,10 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
         <div>
           <Breadcrumb
             items={[
-              { label: "Projects", onClick: () => navigateTo({ type: "projects" }) },
+              {
+                label: "Projects",
+                onClick: () => navigateTo({ type: "projects" }),
+              },
               {
                 label: project?.name || targetProjectId || "Project",
                 onClick: handleBack,
@@ -252,7 +288,9 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
             className="mb-1.5"
           />
           <div className="flex items-center gap-2.5">
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">{app.name}</h2>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+              {app.name}
+            </h2>
             <span className="px-2 py-0.5 rounded text-[11px] uppercase tracking-wider font-semibold bg-slate-100 text-slate-700 border border-slate-200">
               {app.appType}
             </span>
@@ -289,7 +327,7 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
           }`}
         >
           <Settings className="w-4 h-4" />
-          <span>Overview & Config</span>
+          <span>Overview</span>
         </button>
 
         <button
@@ -303,11 +341,6 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
         >
           <History className="w-4 h-4" />
           <span>Deployments</span>
-          {deployments && deployments.length > 0 && (
-            <span className="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded-full border border-slate-200">
-              {deployments.length}
-            </span>
-          )}
         </button>
 
         <button
@@ -349,7 +382,11 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
           onUpdate={(data) => updateAppMutation.mutate(data)}
           isUpdating={updateAppMutation.isPending}
           onDelete={() => {
-            if (confirm(`Are you sure you want to delete application "${app.name}"?`)) {
+            if (
+              confirm(
+                `Are you sure you want to delete application "${app.name}"?`,
+              )
+            ) {
               deleteAppMutation.mutate();
             }
           }}
@@ -371,7 +408,11 @@ export function AppDetailsPage({ appId, projectId, onBack }: AppDetailsPageProps
 
       {activeTab === "logs" && (
         <div className="space-y-4">
-          <LogViewer appId={app.id} type="container" title="Realtime Container Logs" />
+          <LogViewer
+            appId={app.id}
+            type="container"
+            title="Realtime Container Logs"
+          />
         </div>
       )}
 
@@ -423,8 +464,12 @@ function OverviewConfigTab({
   const [slug, setSlug] = useState(app.slug || "");
   const [repositoryUrl, setRepositoryUrl] = useState(app.repositoryUrl || "");
   const [branch, setBranch] = useState(app.branch || "main");
-  const [dockerfilePath, setDockerfilePath] = useState(app.dockerfilePath || "Dockerfile");
-  const [composePath, setComposePath] = useState(app.composePath || "docker-compose.yml");
+  const [dockerfilePath, setDockerfilePath] = useState(
+    app.dockerfilePath || "Dockerfile",
+  );
+  const [composePath, setComposePath] = useState(
+    app.composePath || "docker-compose.yml",
+  );
   const [dockerImage, setDockerImage] = useState(app.dockerImage || "");
   const [envVars, setEnvVars] = useState(() => {
     try {
@@ -461,11 +506,15 @@ function OverviewConfigTab({
 
       {/* General Settings */}
       <div className="border border-slate-200 rounded-xl p-5 bg-white space-y-4 shadow-xs">
-        <h3 className="text-base font-bold text-slate-900">General Configuration</h3>
+        <h3 className="text-base font-bold text-slate-900">
+          General Configuration
+        </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Application Name</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Application Name
+            </label>
             <input
               type="text"
               required
@@ -476,7 +525,9 @@ function OverviewConfigTab({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Friendly Slug</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Friendly Slug
+            </label>
             <input
               type="text"
               required
@@ -488,7 +539,9 @@ function OverviewConfigTab({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Application Type</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Application Type
+            </label>
             <input
               type="text"
               disabled
@@ -500,7 +553,9 @@ function OverviewConfigTab({
 
         {app.appType === "image" ? (
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Docker Image</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Docker Image
+            </label>
             <input
               type="text"
               placeholder="e.g. nginx:alpine or redis:latest"
@@ -513,7 +568,9 @@ function OverviewConfigTab({
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Git Repository URL</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Git Repository URL
+                </label>
                 <input
                   type="text"
                   placeholder="https://github.com/org/repo.git"
@@ -524,7 +581,9 @@ function OverviewConfigTab({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Git Branch</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Git Branch
+                </label>
                 <input
                   type="text"
                   placeholder="main"
@@ -537,7 +596,9 @@ function OverviewConfigTab({
 
             {app.appType === "dockerfile" ? (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Dockerfile Path</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Dockerfile Path
+                </label>
                 <input
                   type="text"
                   placeholder="Dockerfile"
@@ -548,7 +609,9 @@ function OverviewConfigTab({
               </div>
             ) : (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Docker Compose File</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Docker Compose File
+                </label>
                 <input
                   type="text"
                   placeholder="docker-compose.yml"
@@ -565,9 +628,12 @@ function OverviewConfigTab({
       {/* Environment Variables */}
       <div className="border border-slate-200 rounded-xl p-5 bg-white space-y-3 shadow-xs">
         <div>
-          <h3 className="text-base font-bold text-slate-900">Environment Variables</h3>
+          <h3 className="text-base font-bold text-slate-900">
+            Environment Variables
+          </h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Key-value pairs as valid JSON (e.g. {`{"PORT": "8080", "NODE_ENV": "production"}`})
+            Key-value pairs as valid JSON (e.g.{" "}
+            {`{"PORT": "8080", "NODE_ENV": "production"}`})
           </p>
         </div>
 
@@ -587,7 +653,11 @@ function OverviewConfigTab({
           disabled={isUpdating}
           className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-xs"
         >
-          {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {isUpdating ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
           <span>Save Changes</span>
         </button>
 
@@ -597,7 +667,11 @@ function OverviewConfigTab({
           disabled={isDeleting}
           className="flex items-center gap-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-transparent hover:border-rose-200 px-4 py-2.5 rounded-lg text-sm font-medium transition"
         >
-          {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+          {isDeleting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Trash2 className="w-4 h-4" />
+          )}
           <span>Delete Application</span>
         </button>
       </div>
@@ -633,8 +707,12 @@ function DeploymentsTab({
     return (
       <div className="border border-dashed border-slate-300 bg-white/60 rounded-xl p-12 text-center text-slate-500">
         <History className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
-        <p className="font-semibold text-slate-700">No deployments recorded yet</p>
-        <span className="text-xs text-slate-500">Click &quot;Deploy Now&quot; above to trigger your first build.</span>
+        <p className="font-semibold text-slate-700">
+          No deployments recorded yet
+        </p>
+        <span className="text-xs text-slate-500">
+          Click &quot;Deploy Now&quot; above to trigger your first build.
+        </span>
       </div>
     );
   }
@@ -654,7 +732,8 @@ function DeploymentsTab({
           <tbody className="divide-y divide-slate-100">
             {deployments.map((dep) => {
               const isCompleted = dep.status === "COMPLETED";
-              const isFailed = dep.status === "FAILED" || dep.status === "INTERRUPTED";
+              const isFailed =
+                dep.status === "FAILED" || dep.status === "INTERRUPTED";
               const isRunning = dep.status === "RUNNING";
 
               return (
@@ -669,27 +748,37 @@ function DeploymentsTab({
                         isCompleted
                           ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                           : isFailed
-                          ? "bg-rose-50 text-rose-700 border border-rose-200"
-                          : isRunning
-                          ? "bg-blue-50 text-blue-700 border border-blue-200 animate-pulse"
-                          : "bg-slate-100 text-slate-600 border border-slate-200"
+                            ? "bg-rose-50 text-rose-700 border border-rose-200"
+                            : isRunning
+                              ? "bg-blue-50 text-blue-700 border border-blue-200 animate-pulse"
+                              : "bg-slate-100 text-slate-600 border border-slate-200"
                       }`}
                     >
-                      {isCompleted && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
-                      {isFailed && <XCircle className="w-3.5 h-3.5 text-rose-600" />}
-                      {isRunning && <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />}
+                      {isCompleted && (
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                      )}
+                      {isFailed && (
+                        <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                      )}
+                      {isRunning && (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      )}
                       <span>{dep.status}</span>
                     </span>
                   </td>
 
-                  <td className="py-3 px-4 font-mono text-xs text-slate-700 font-medium">{dep.id}</td>
+                  <td className="py-3 px-4 font-mono text-xs text-slate-700 font-medium">
+                    {dep.id}
+                  </td>
 
                   <td className="py-3 px-4 font-mono text-xs text-slate-500">
                     {dep.commitHash ? dep.commitHash.slice(0, 7) : "—"}
                   </td>
 
                   <td className="py-3 px-4 text-xs text-slate-500">
-                    {dep.startedAt ? new Date(dep.startedAt).toLocaleString() : "—"}
+                    {dep.startedAt
+                      ? new Date(dep.startedAt).toLocaleString()
+                      : "—"}
                   </td>
                 </tr>
               );
@@ -744,8 +833,13 @@ function DomainsTab({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-bold text-slate-900">Configured Domains</h3>
-          <p className="text-xs text-slate-500">Caddy reverse proxies incoming traffic on these domains to your container.</p>
+          <h3 className="text-base font-bold text-slate-900">
+            Configured Domains
+          </h3>
+          <p className="text-xs text-slate-500">
+            Caddy reverse proxies incoming traffic on these domains to your
+            container.
+          </p>
         </div>
         <button
           type="button"
@@ -766,7 +860,9 @@ function DomainsTab({
         <div className="border border-dashed border-slate-300 bg-white/60 rounded-xl p-10 text-center text-slate-500">
           <Globe className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
           <p className="font-semibold text-slate-700">No domains mapped yet</p>
-          <span className="text-xs text-slate-500">Add a custom domain or localhost subdomain to route web traffic.</span>
+          <span className="text-xs text-slate-500">
+            Add a custom domain or localhost subdomain to route web traffic.
+          </span>
         </div>
       ) : (
         <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
@@ -793,14 +889,18 @@ function DomainsTab({
                       <ExternalLink className="w-3.5 h-3.5 opacity-70" />
                     </a>
                   </td>
-                  <td className="py-3 px-4 font-mono text-xs text-slate-600">{dom.containerPort}</td>
+                  <td className="py-3 px-4 font-mono text-xs text-slate-600">
+                    {dom.containerPort}
+                  </td>
                   <td className="py-3 px-4 text-xs">
                     {dom.httpsEnabled ? (
                       <span className="text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full text-[11px]">
                         Auto TLS (Let&apos;s Encrypt)
                       </span>
                     ) : (
-                      <span className="text-slate-500 font-medium">HTTP only</span>
+                      <span className="text-slate-500 font-medium">
+                        HTTP only
+                      </span>
                     )}
                   </td>
                   <td className="py-3 px-4 text-right">
@@ -829,7 +929,11 @@ function AddDomainModal({
   isSubmitting,
 }: {
   onClose: () => void;
-  onSubmit: (data: { host: string; containerPort: number; httpsEnabled: boolean }) => void;
+  onSubmit: (data: {
+    host: string;
+    containerPort: number;
+    httpsEnabled: boolean;
+  }) => void;
   isSubmitting: boolean;
 }) {
   const [host, setHost] = useState("");
@@ -843,16 +947,27 @@ function AddDomainModal({
   };
 
   return (
-    <Dialog open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
+    <Dialog
+      open={true}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="max-w-md w-full p-6">
         <DialogHeader>
-          <DialogTitle className="text-base font-bold text-slate-900">Add Custom Domain</DialogTitle>
-          <DialogDescription className="sr-only">Add custom domain and routing port</DialogDescription>
+          <DialogTitle className="text-base font-bold text-slate-900">
+            Add Custom Domain
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Add custom domain and routing port
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Host Domain</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Host Domain
+            </label>
             <input
               type="text"
               required
@@ -864,7 +979,9 @@ function AddDomainModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Container Port</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Container Port
+            </label>
             <input
               type="number"
               required
@@ -884,7 +1001,10 @@ function AddDomainModal({
               onChange={(e) => setHttpsEnabled(e.target.checked)}
               className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
             />
-            <label htmlFor="httpsEnabled" className="text-xs font-medium text-slate-700 select-none cursor-pointer">
+            <label
+              htmlFor="httpsEnabled"
+              className="text-xs font-medium text-slate-700 select-none cursor-pointer"
+            >
               Enable Automatic SSL / HTTPS (Let&apos;s Encrypt)
             </label>
           </div>
